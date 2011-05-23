@@ -1,0 +1,9 @@
+5/23/11: Modify preloader functions to check whether they've been passed element references:
+
+  - if so, get the nodeName of the element
+  - if it's an <img> element, get the src attribute
+  - if it's not, get its background image
+
+5/23/11: Consider: Do I want nested objects?
+
+  Seems like some of these calls will get really wordy. Is it better to do all the work inside a self-executing function?

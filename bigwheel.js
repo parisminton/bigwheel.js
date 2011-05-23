@@ -33,7 +33,6 @@
         func.reg_ids.push(proc_id);
         
         this.registry.count += 1;
-        alert('Friendly Fires.');
       },
       
       stopListening : function (node, evt, func, capt) {
@@ -62,21 +61,33 @@
     
     imgswaps : {
     
-      // only needs to fire only once, as soon as toggle locations are known 
-      preload : function (path) {
+      preloadTogglers : function (path) {
         var images = [],
+            args = [],
             i = 0,
-            len = arguments.length;      
-        if (len == 2 && typeof arguments[1] == "array") {
+            len = arguments.length,
+            shortname;
+        if (len == 2 && typeof arguments[1] == "object") {
           len = arguments[1].length;
           for (i; i < len; i += 1) {
-            arguments[i] = arguments[1][i];
+            args[i] = arguments[1][i];
           }
-          len = arguments.length;
         }
+        else {
+          for (i; i < (len - 1); i += 1) {
+            args[i] = arguments[(i + 1)];
+          }
+        }
+        i = 0;
+        len = args.length;
         for (i; i < len; i += 1) {
+          shortname = bW.strings.getFileName(bW.styles.getStyle(args[i], "background-image", "backgroundImage"));
           images[i] = new Image();
-          images[i].src = path + arguments[(i + 1)];
+          images[i].src = path + shortname;
+          if (shortname.match(/_off\.|_on\./)) {
+            images[(i + len)] = new Image();
+            images[(i + len)].src = bW.strings.toggler(shortname);
+          }
         }
       },
       
@@ -95,7 +106,7 @@
           
           ev.src.parentNode.style.backgroundImage = image_path[0] + suffix + image_path[1];
     
-        };
+        }
       }
     },
     
@@ -113,9 +124,37 @@
     
     // string manipulation
     strings : {
+      getFileName : function (string) {
+        var filename,
+            index1 = (string.lastIndexOf("/") + 1),
+            index2,
+            char2 = "";
+        if (string.lastIndexOf("\"") != -1) {
+          char2 = "\"";
+          index2 = string.lastIndexOf(char2);
+          filename = string.substring(index1, index2);
+        }   
+        else {
+          filename = string.substring(index1);
+        }   
+        return filename;
+      },
+      
       toggler : function (filename) {
-        var separator = /_off\.|_on\./;
-        str_array = filename.split(separator);
+        var find = /_off\.|_on\./,
+            match = filename.match(find),
+            suffix,
+            new_filename,
+            split_array;
+        if (match == "_off.") {
+          suffix = "_on.";
+        }
+        else {
+          suffix = "_off.";
+        }
+        split_array = filename.split(match);
+        new_filename = split_array[0] + suffix + split_array[1];
+        return new_filename;
       }
     }
   };
