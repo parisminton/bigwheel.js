@@ -1,5 +1,6 @@
-bigwheel.js is my library of JavaScript functions for basic browser stuff like cross-compatibility, working with styles dynamically and helping with rollovers and effects.
+bigwheel.js
+===========
 
-I'd keep modifying functions I'd written earlier for different purposes, and took the notion to make them easier to reuse and collect them somewhere. As I'm building my portfolio, now's a great time to do it.
+bigwheel.js is my library of JavaScript functions for tasks I do over and over again, like event handling and string manipulation.
 
-With all the great libraries out there, why build my own? For the learning experience, the challenge, the chance to expose my code to the community, and because it's fun.
+It irks me that I use so many libraries. On personal projects with no deadline, it's satisfying to build stuff with my bare hands out of vanilla JavaScript.
