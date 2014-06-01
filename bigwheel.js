@@ -1,75 +1,180 @@
+/* 
+ * > bigwheel.js 0.2.1 <
+ *
+ * My go-to JavaScript functions.
+ * 
+ * james@da.ydrea.ms
+ *
+ */
+
 (function () {
 
-  this.bW = {
+  var bW = (typeof window.bW === 'object') ? window.bW : {};
+
+  // ### event handler helpers
+
+  bW.select = function (selector) {
+    var select_rx = /\.|#| |\[|\]|'|"|=|\*/g,
+        elements = [],
+        bWObj = {},
+        scope = document,
+        getter;
+
+    function filterNodeList (list, getter, filter) {
+      var i,
+          len = list.length,
+          nodes,
+          filtered_nodes = []; 
+
+      function parseNodes (nlist) {
+        var j,
+            nlen = nlist.length;
+
+        for (j = 0; j < nlen; j += 1 ) {
+          filtered_nodes.push(nlist[j]);
+        }
+        
+      } // end parseNodes
+
+      for (i = 0; i < len; i += 1) {
+        nodes = list[i][getter](filter);
+
+        if (typeof nodes === 'object') {
+          filtered_nodes.push(nodes);
+        }
+        else {
+          parseNodes(nodes);
+        }
+      }
+
+      scope = filtered_nodes;
+      return filtered_nodes;
+
+    } // end filterNodeList
+
+    function selectFromString () {
+      var leads = selector.match(select_rx) || [],
+          names = selector.split(select_rx) || [],
+          i, len;
+      
+      // remove any empty strings Array.split might have added
+      names = names.filter(function (item) {
+        if (item.length > 0) {
+          return item;
+        }
+      }); // end names.filter
+
+      len = (leads.length > names.length) ? leads.length : names.length;
+
+      for (i = 0; i < len; i += 1) {
+
+        if (leads[i] === '.') {
+          getter = 'getElementsByClassName';
+        }
+
+        if (leads[i] === '#') {
+          getter = 'getElementById';
+        }
+
+        if (leads[i] === ' ' || !select_rx.test(selector.charAt(0))) {
+          getter = 'getElementsByTagName';
+        }
+
+        console.log('The lead is ' + leads[i] + '.');
+        console.log('The name is ' + names[i] + '.');
+
+        // put singular DOM references, but not NodeLists, in an array
+        if (!Array.isArray(scope)) {
+          scope = [scope];
+        }
+        filterNodeList(scope, getter, names[i]);
+
+      } // end leads/names loop
+
+    } // end selectFromString
+
+    if (typeof selector === 'string') {
+      selectFromString();
+    }
+    return scope;
+  } // end bW core selector
+
+  bW.event_registry = {
+    count : 0
+  }; // end event_registry
+  
+  
+  bW.listenFor = function (elem, evt, func, capt, aargs) {
+    var proc_id;
     
-    // event handler helpers
+    // W3C-compliant browsers
+    if (elem.addEventListener) {
+      bW.evts.listener_model = "addEventListener";
+      elem.addEventListener(evt, func, capt);
+    }
+    // IE pre-9
+    else {
+      if (elem.attachEvent) { 
+        bW.evts.listener_model = "attachEvent";
+        elem.attachEvent(("on" + evt), func);
+      }
+      // fall back to DOM level 0
+      else { 
+        bW.evts.listener_model = "onevent";
+        elem["on" + evt] = func;
+      }
+    }
+    
+    // store these values in a registry, so we can retrieve them
+    proc_id = ("process" + (this.registry.count + 1)); // unique id
+    this.registry[proc_id] = {};
+    this.registry[proc_id].elem = elem;
+    this.registry[proc_id].evt = evt;
+    this.registry[proc_id].func = func;
+    this.registry[proc_id].capt = capt;
+    if (aargs) {
+      this.registry[proc_id].aargs = aargs; // additional arguments
+    }
+    else { 
+      this.registry[proc_id].aargs = [];
+    }
+    
+    // add a property to the function itself that stores the event type. by referencing the event type, we can recall the process ID and retrieve any additional arguments.
+    if (!func.reg_ids) {
+      func.reg_ids = {};
+    }
+    func.reg_ids[evt] = proc_id;
+    
+    this.registry.count += 1; // store the total number of registered listeners
+  }
+ 
+  /*
+    {
+    
     evts : {
     
-      // ... cross-browser help for registering functions for events...
-      listenFor : function (node, evt, func, capt, aargs) {
-        var proc_id;
-        
-        // ...W3C-compliant browsers...
-        if (node.addEventListener) {
-          bW.evts.listener_model = "addEventListener";
-          node.addEventListener(evt, func, capt);
-        }
-        // ...IE pre-9...
-        else {
-          if (node.attachEvent) { 
-            bW.evts.listener_model = "attachEvent";
-            node.attachEvent(("on" + evt), func);
-          }
-          // ...fall back to DOM level 0...
-          else { 
-            bW.evts.listener_model = "onevent";
-            node["on" + evt] = func;
-          }
-        }
-        
-        // ...store these values in a registry, so we can retrieve them...
-        proc_id = ("process" + (this.registry.count + 1)); // unique id
-        this.registry[proc_id] = {};
-        this.registry[proc_id].node = node;
-        this.registry[proc_id].evt = evt;
-        this.registry[proc_id].func = func;
-        this.registry[proc_id].capt = capt;
-        if (aargs) {
-          this.registry[proc_id].aargs = aargs; // additional arguments
-        }
-        else { 
-          this.registry[proc_id].aargs = [];
-        }
-        
-        // ...add a property to the function itself that stores the event type. by referencing the event type, we can recall the process ID and retrieve any additional arguments.
-        if (!func.reg_ids) {
-          func.reg_ids = {};
-        }
-        func.reg_ids[evt] = proc_id;
-        
-        this.registry.count += 1; // ...store the total number of registered listeners...
-      },
+      ,
       
-      // ...reclaim the memory used by attaching the listeners...
-      stopListening : function (node, evt, func, capt) {
-        if (node.removeEventListener) {
-          node.removeEventListener(evt, func, capt);
+      // reclaim the memory used by attaching the listeners
+      stopListening : function (elem, evt, func, capt) {
+        if (elem.removeEventListener) {
+          elem.removeEventListener(evt, func, capt);
         }
         else {
-          if (node.detachEvent) {
-            node.detachEvent(('on' + evt), func);
+          if (elem.detachEvent) {
+            elem.detachEvent(('on' + evt), func);
           }
           else {
-            node[evt] = null;
+            elem[evt] = null;
           }
         }
       },
       
-      // ...detach a bunch of listeners. if there are listeners, this should really be fired on every window unload...
+      // detach a bunch of listeners. if there are listeners, this should really be fired on every window unload
       stopAllListeners : function () {
         for (key in this.registry) {
-          if (key != 'count') { // ...ignore the \'count\' variable...
-            this.stopListening(this.registry[key].node, this.registry[key].evt, this.registry[key].func, this.registry[key].capt);
+          if (key != 'count') { // ignore the \'count\' variable
+            this.stopListening(this.registry[key].elem, this.registry[key].evt, this.registry[key].func, this.registry[key].capt);
             delete this.registry[key];
             this.registry.count =- 1;
           };
@@ -78,33 +183,34 @@
       
       registry : { count : 0 },
       
-      // ...a helper to make the event identifying more compact in each function that would use a listener...
+      // a helper to make the event identifying more compact in each function that would use a listener
       identify : function (evt) {
         evt = evt || window.event;
         evt.src = evt.target || evt.srcElement;
         return evt;
       },
       
-      // ...retrieve the additional arguments from the registry...
+      // retrieve the additional arguments from the registry
       getAargs : function (func_ref, evt_type) {
         var proc_id = func_ref.reg_ids[evt_type];
         return bW.evts.registry[proc_id].aargs;
       },
       
-      // ... override the default \'href\' destination on an \<a\> tag...
+      // override the default \'href\' destination on an \<a\> tag
       cancelAnchorDefault : function () {
         return false;
       }
     },// end evts object
     
 
+//
 
     // DOM helpers
     dom : {
       
-      count : 0, // generic, non-global counter for use outside of functions...
+      count : 0, // generic, non-global counter for use outside of functions
       
-      // ... return a node closer to the root of the DOM using one farther away...
+      // return a node closer to the root of the DOM using one farther away
       descendTree : function (elem, ancestor) {
         if (elem.nodeName == ancestor) {
           return elem;
@@ -216,7 +322,7 @@
     // style retreival
     styles : {
 
-      // ... figure out which method of reporting DOM styles the browser is using... 
+      // figure out which method of reporting DOM styles the browser is using
       getStyleModel : function () {
         var ghost = document.createElement("div"),
             bod = document.getElementsByTagName("body")[0];
@@ -374,7 +480,7 @@
         return new_filename;
       },
 
-      // ... handy for converting CSS attributes to their style object properties ...
+      // handy for converting CSS attributes to their style object properties
       hyphenToCamelCase : function (string) {
         var i, len, split_array; 
         if (string.indexOf("-") == -1) {
@@ -391,16 +497,16 @@
     
 
 
-    // ... an object for environment-specific functions, like element references and convenience variables; if the rest of this file is mostly helpers from the library that change very little and can be reused, this area will contain most of the distinct functions and variables for a specific page...
+    // an object for environment-specific functions, like element references and convenience variables; if the rest of this file is mostly helpers from the library that change very little and can be reused, this area will contain most of the distinct functions and variables for a specific page
     env : {
       
-      // ... is a recursive scroll function currently firing? false by default...
+      // is a recursive scroll function currently firing? false by default
       autoscrolling : false, 
     
-      // ... has there been recent scroll? false by default...
+      // has there been recent scroll? false by default
       recentscroll : false,
       
-      // ... give a one-second window before firing any onscroll event functions.
+      // give a one-second window before firing any onscroll event functions.
       scrollAlert : function () {
         bW.env.recentscroll = true;
         var wait = setTimeout(bW.env.scrollAlertOff, 1000);
@@ -420,9 +526,9 @@
       
       slider : document.getElementById('about'),
       
-      current : 'nav-carousel', // ... the current territory; carousel by default...
+      current : 'nav-carousel', // the current territory; carousel by default
       
-      // ... change bW.env.current when the reader clicks a button. this affects the calculations in scrollBg() and slide()...
+      // change bW.env.current when the reader clicks a button. this affects the calculations in scrollBg() and slide()
       update : function (evt) {
         var ev = bW.evts.identify(evt),
             key = ev.src.parentNode.parentNode.id;
@@ -431,7 +537,7 @@
         return key;
       },
       
-      // ... populate that empty buttons object; we want to store the reference to the corresponding button, the string scrollBg() uses to determine the destination territory, the yoffset value where the territory begins, and the background position of the slider arrow for each button...
+      // populate that empty buttons object; we want to store the reference to the corresponding button, the string scrollBg() uses to determine the destination territory, the yoffset value where the territory begins, and the background position of the slider arrow for each button
       setup : function () {
         var refs = [
               document.getElementById('nav-about'),
@@ -443,10 +549,10 @@
         
         for (i = 0; i < len; i +=1) {
           
-          // ...deep object population in a loop... for the sake of your own sanity, please, please save this somewhere and reuse it...
+          // deep object population in a loop for the sake of your own sanity, please, please save this somewhere and reuse it
           bW.env.buttons[refs[i].id] = {
             elem : refs[i],
-            // ...the distance between each point is 150 pixels, starting at 50...
+            // the distance between each point is 150 pixels, starting at 50
             position : (((i + 1) * 150) - 100)
           };
         }
@@ -455,17 +561,17 @@
         bW.env.buttons['nav-widgetry'].dest = 'widgetanchor';
       },
       
-      // ... divide the screen into \'territories\', so that scrolling into one from another can trigger an event, like slideBg()...
+      // divide the screen into \'territories\', so that scrolling into one from another can trigger an event, like slideBg()
       drawTerritories : function () {
         for (key in bW.env.buttons) {
           bW.env.buttons[key].territory = (bW.motion.getDestYOffset(bW.env.buttons[key].dest) - 200);
         }
       },
       
-      // ... now check those territories. we\'ll likely fire this from an event...
+      // now check those territories. we\'ll likely fire this from an event
       checkTerritories : function () {
         
-        if (!bW.env.autoscrolling) { // ... don\'t fire during a recursive scroll...
+        if (!bW.env.autoscrolling) { // don\'t fire during a recursive scroll
           var curr_pos = bW.motion.getCurrYOffset(),
               wait;
   
@@ -489,24 +595,24 @@
     // motion helpers
     motion : {
     
-      // ...helpers for scrollPage and drawTerritories...
+      // helpers for scrollPage and drawTerritories
       getCurrYOffset : function () {
-        // ...W3C-compliant browsers...
+        // W3C-compliant browsers
         if (self.pageYOffset) {
           return self.pageYOffset;
         };
         
-        // ...IE6 standards mode...
+        // IE6 standards mode
         if (document.documentElement && document.documentElement.scrollTop) {
           return document.documentElement.scrollTop;
         };
         
-        // ...IE6, 7 and 8...
+        // IE6, 7 and 8
         if (document.body.scrollTop) {
           return document.body.scrollTop;
         };
         
-        // ...else we can\'t help you...
+        // else we can\'t help you
         return 0;
       },
       
@@ -525,7 +631,7 @@
       
       scrollPage : function () {
         
-        // ...for an explanation of the math, see slideBg()...
+        // for an explanation of the math, see slideBg()
         var the_id = bW.env.buttons[bW.env.current].dest,
             curr_pos = bW.motion.getCurrYOffset(),
             dest = bW.motion.getDestYOffset(the_id),
@@ -538,7 +644,7 @@
               window.scrollTo(0, leap);
             };
         
-        bW.env.autoscrolling = true; // ...still in the process of scrolling...
+        bW.env.autoscrolling = true; // still in the process of scrolling
         
         if (distance < 100) {
           window.scrollTo(0, dest);
@@ -551,7 +657,7 @@
         if (dest > curr_pos) {
           for (var i = curr_pos; i < dest; i += inc ) {
           
-            // ... i don\'t like the compiled method of setTimeout, but i haven\'t figured out a solution yet... scr() on line 164 doesn\'t work yet... // here and below, we add 130 pixels to give room for the fixed nav bar at the top of the screen...
+            // i don\'t like the compiled method of setTimeout, but i haven\'t figured out a solution yet scr() on line 164 doesn\'t work yet // here and below, we add 130 pixels to give room for the fixed nav bar at the top of the screen
             setTimeout('window.scrollTo(0, ' + (leap - 130) + ')', timer * speed);
             leap += inc;
             if (leap > dest) {
@@ -559,7 +665,7 @@
             };
             timer++;
           };
-          bW.env.autoscrolling = false; // ...done scrolling...
+          bW.env.autoscrolling = false; // done scrolling
           return false;
         };
         for (var i = curr_pos; i > dest; i -= inc ) {
@@ -570,17 +676,17 @@
           };
           timer++;
         };
-        bW.env.autoscrolling = false; // ...done scrolling...
+        bW.env.autoscrolling = false; // done scrolling
         return false;
       },
       
-      /* ... a tester for reading the yoffset value...
+      // a tester for reading the yoffset value
       compass : function () {
         console.log(bW.motion.getCurrYOffset());
       },
-      */
+     
       
-      // ... is a recursive slider function firing? false by default...
+      // is a recursive slider function firing? false by default
       sliding : false,
       
       expandElem : function() {
@@ -592,60 +698,59 @@
             dest = bW.env.buttons[bW.env.current].position,
             curr_pos, distance, inc, wait;
 
-        /* ...get the value of the background image\'s current left position... */		
+        // get the value of the background image\'s current left position.	
        
-        /* ... the style model is now picked at load time. we can test for bW.env.style_model...
-        the idea here is this function does the math, which never changes, passing in css properties depending on the type of animation. */
+        // the style model is now picked at load time. we can test for bW.env.style_model
 
 
-        /* ...FF, Safari, IE7, 8, and Opera... */ 
+        // FF, Safari, IE7, 8, and Opera
         if (document.defaultView && document.defaultView.getComputedStyle) {
           curr_pos = parseInt(document.defaultView.getComputedStyle(slider, null).getPropertyValue(smProperties[style_model][prop]));
         }
         else if (slider.currentStyle) {
-          /* ...IE pre-9... */
+          // IE pre-9
           curr_pos = parseInt(slider.currentStyle[smProperties[style_model][prop]]);
         }
         else {
           return false;
         }
 
-        /* ... if the current position equals the destination, exit... */
+        // if the current position equals the destination, exit
         if (curr_pos == dest) {
           bW.motion.sliding = false;
           return true;
         }
         
-        /* ... if the current position doesn't exist, set it to zero... */
+        // if the current position doesn't exist, set it to zero
         if (!curr_pos || curr_pos == '' || isNaN(curr_pos)) {
           curr_pos = 0;
         }
         
-        /* ... calculate the distance between the current position and destination... */
+        // calculate the distance between the current position and destination
         distance = (dest - curr_pos);
 
-        /* ... if the difference is negative, make it positive... */
+        // if the difference is negative, make it positive
         if (distance < 0) {
           distance = (0 - distance);
         }
         
-        /* ... calculate a fraction of that distance.. */
+        // calculate a fraction of that distance..
         inc = Math.ceil(distance / 5);
       
         bW.motion.sliding = true;
-        /* ... if the current position is less than the destination, slide the background image forward... */
+        // if the current position is less than the destination, slide the background image forward
         if (curr_pos < dest) {
           curr_pos += inc;
           slider.style[prop] = curr_pos + 'px 98px';
         }
         
-        /* ... if the current position is greater than the destination, slide the background image backward... */
+        // if the current position is greater than the destination, slide the background image backward
         else {
           curr_pos -= inc;
           slider.style[prop] = curr_pos + 'px 98px';
         }
         
-        /* ... repeat until the current position equals the destination... */
+        // repeat until the current position equals the destination
         wait = setTimeout(bW.motion.slide, 50);
       },
   
@@ -654,56 +759,56 @@
             dest = bW.env.buttons[bW.env.current].position,
             curr_pos, distance, inc, wait;
 
-        /* ...get the value of the background image\'s current left position... */		
+        // get the value of the background image\'s current left position		
         
-        /* ...FF, Safari, IE7, 8, and Opera... */ 
+        // FF, Safari, IE7, 8, and Opera 
         if (document.defaultView.getComputedStyle) {
           curr_pos = parseInt(document.defaultView.getComputedStyle(slider, null).getPropertyValue('background-position'));
         }
         else if (slider.currentStyle) {
-          /* ...IE pre-9... */
+          // IE pre-9
           curr_pos = parseInt(slider.currentStyle.backgroundPositionX);
         }
         else {
           return false;
         }
 
-        /* ... if the current position equals the destination, exit... */
+        // if the current position equals the destination, exit
         if (curr_pos == dest) {
           bW.motion.sliding = false;
           return true;
         }
         
-        /* ... if the current position doesn't exist, set it to zero... */
+        // if the current position doesn't exist, set it to zero
         if (!curr_pos || curr_pos == '' || isNaN(curr_pos)) {
           curr_pos = 0;
         }
         
-        /* ... calculate the distance between the current position and destination... */
+        // calculate the distance between the current position and destination
         distance = (dest - curr_pos);
 
-        /* ... if the difference is negative, make it positive... */
+        // if the difference is negative, make it positive
         if (distance < 0) {
           distance = (0 - distance);
         }
         
-        /* ... calculate a fraction of that distance.. */
+        // calculate a fraction of that distance..
         inc = Math.ceil(distance / 5);
       
         bW.motion.sliding = true;
-        /* ... if the current position is less than the destination, slide the background image forward... */
+        // if the current position is less than the destination, slide the background image forward
         if (curr_pos < dest) {
           curr_pos += inc;
           slider.style.backgroundPosition = curr_pos + 'px 98px';
         }
         
-        /* ... if the current position is greater than the destination, slide the background image backward... */
+        // if the current position is greater than the destination, slide the background image backward
         else {
           curr_pos -= inc;
           slider.style.backgroundPosition = curr_pos + 'px 98px';
         }
         
-        /* ... repeat until the current position equals the destination... */
+        // repeat until the current position equals the destination
         wait = setTimeout(bW.motion.slideBg, 50);
       }
     
@@ -788,11 +893,11 @@
     
       updateNewCheckbox : function (evt) {
         if (document.forms["contact-form"]["contact-conf"]) {
-          var /* aargs, */
+          var // aargs,
               cb = document.forms["contact-form"]["contact-conf"],
               l = document.getElementById("conf");
               evt = bW.evts.identify(evt);
-              /* aargs = bW.evts.getAargs(bW.forms.updateNewCheckbox, evt.type); */
+              // aargs = bW.evts.getAargs(bW.forms.updateNewCheckbox, evt.type);
           if (evt.type == "mouseover" && (!this.clicked)) {
             this.style.backgroundPosition = "-18px top";
           }
@@ -891,7 +996,16 @@
         }
       }
     }
-  }; // ... end bW object. still inside the immediate function...
+  */ 
+
+  if (typeof define === 'function' && define.amd) {
+    define(function () {
+      return bW;
+    });
+  }
+
+  return bW;
+
 }());
 
 console.log("I can take you there. Just follow me.");
