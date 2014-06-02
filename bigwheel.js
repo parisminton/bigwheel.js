@@ -26,6 +26,25 @@
           nodes,
           filtered_nodes = []; 
 
+
+      function storeUniques (list) {
+        var i,
+            len = list.length,
+            uniques = [];
+
+        for (i = 0; i < len; i += 1) {
+          if (uniques.some(function (u) {
+              return u === list[i];
+            })) {
+            continue;
+          }
+          uniques.push(list[i]);
+        }
+        return uniques;
+
+      } // end storeUniques
+
+
       function parseNodes (nlist) {
         var j,
             nlen = nlist.length;
@@ -33,8 +52,9 @@
         for (j = 0; j < nlen; j += 1 ) {
           filtered_nodes.push(nlist[j]);
         }
-        
+
       } // end parseNodes
+
 
       for (i = 0; i < len; i += 1) {
         nodes = list[i][getter](filter);
@@ -47,8 +67,8 @@
         }
       }
 
-      scope = filtered_nodes;
-      return filtered_nodes;
+      scope = storeUniques(filtered_nodes);
+      return scope;
 
     } // end filterNodeList
 
@@ -84,6 +104,7 @@
         console.log('The name is ' + names[i] + '.');
 
         // put singular DOM references, but not NodeLists, in an array
+        // filterNodeList always stores its results in a true array
         if (!Array.isArray(scope)) {
           scope = [scope];
         }
