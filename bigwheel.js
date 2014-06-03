@@ -14,7 +14,7 @@
   // ### event handler helpers
 
   bW.select = function (selector) {
-    var select_rx = /\.|#| |\[|\]|'|"|=|\*/g,
+    var select_rx = /\s+\.|#|\s+[a-zA-Z]|\[|\]|'|"|=|\*/g,
         elements = [],
         bWObj = {},
         scope = document,
@@ -86,20 +86,24 @@
 
       len = flags.length;
 
+      console.log(tokens);
+      console.log(flags);
+
       if (tokens.length < flags.length) {
+        tokens.unshift('tagname');
       }
 
       for (i = 0; i < len; i += 1) {
 
-        if (tokens[i] === '.') {
+        if (/^\.|\s+\./.test(tokens[i])) {
           getter = 'getElementsByClassName';
         }
 
-        if (tokens[i] === '#') {
+        if (/^#|\s+#/.test(tokens[i])) {
           getter = 'getElementById';
         }
 
-        if (tokens[i] === ' ' || !select_rx.test(selector.charAt(0))) {
+        if (/tagname|\s+[a-zA-Z]/.test(tokens[i])) {
           getter = 'getElementsByTagName';
         }
 
