@@ -59,7 +59,7 @@
       for (i = 0; i < len; i += 1) {
         nodes = list[i][getter](filter);
 
-        if (typeof nodes === 'object') {
+        if (!nodes.length) {
           filtered_nodes.push(nodes);
         }
         else {
@@ -73,44 +73,47 @@
     } // end filterNodeList
 
     function selectFromString () {
-      var leads = selector.match(select_rx) || [],
-          names = selector.split(select_rx) || [],
+      var tokens = selector.match(select_rx) || [],
+          flags = selector.split(select_rx) || [],
           i, len;
       
       // remove any empty strings Array.split might have added
-      names = names.filter(function (item) {
+      flags = flags.filter(function (item) {
         if (item.length > 0) {
           return item;
         }
-      }); // end names.filter
+      }); // end flags.filter
 
-      len = (leads.length > names.length) ? leads.length : names.length;
+      len = flags.length;
+
+      if (tokens.length < flags.length) {
+      }
 
       for (i = 0; i < len; i += 1) {
 
-        if (leads[i] === '.') {
+        if (tokens[i] === '.') {
           getter = 'getElementsByClassName';
         }
 
-        if (leads[i] === '#') {
+        if (tokens[i] === '#') {
           getter = 'getElementById';
         }
 
-        if (leads[i] === ' ' || !select_rx.test(selector.charAt(0))) {
+        if (tokens[i] === ' ' || !select_rx.test(selector.charAt(0))) {
           getter = 'getElementsByTagName';
         }
 
-        console.log('The lead is ' + leads[i] + '.');
-        console.log('The name is ' + names[i] + '.');
+        console.log('The token is ' + tokens[i] + '.');
+        console.log('The flag is ' + flags[i] + '.');
 
         // put singular DOM references, but not NodeLists, in an array
         // filterNodeList always stores its results in a true array
-        if (!Array.isArray(scope)) {
+        if (!scope.length) {
           scope = [scope];
         }
-        filterNodeList(scope, getter, names[i]);
+        filterNodeList(scope, getter, flags[i]);
 
-      } // end leads/names loop
+      } // end tokens/flags loop
 
     } // end selectFromString
 
