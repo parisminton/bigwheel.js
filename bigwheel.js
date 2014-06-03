@@ -59,7 +59,7 @@
       for (i = 0; i < len; i += 1) {
         nodes = list[i][getter](filter);
 
-        if (!nodes.length) {
+        if (typeof nodes.length === 'undefined') {
           filtered_nodes.push(nodes);
         }
         else {
@@ -108,7 +108,7 @@
 
         // put singular DOM references, but not NodeLists, in an array
         // filterNodeList always stores its results in a true array
-        if (!scope.length) {
+        if (typeof scope.length === 'undefined') {
           scope = [scope];
         }
         filterNodeList(scope, getter, flags[i]);
