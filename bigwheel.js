@@ -14,13 +14,12 @@
   // ### event handler helpers
 
   bW.select = function (selector) {
-    var select_rx = /\s+\.|#|\s+[a-zA-Z]|\[|\]|'|"|=|\*/g,
-        elements = [],
+    var elements = [],
         bWObj = {},
         scope = document,
         getter;
 
-    function filterNodeList (list, getter, filter) {
+    function filterHTMLCollection (list, getter, filter) {
       var i,
           len = list.length,
           nodes,
@@ -41,40 +40,68 @@
           uniques.push(list[i]);
         }
         return uniques;
-
       } // end storeUniques
 
 
-      function parseNodes (nlist) {
-        var j,
-            nlen = nlist.length;
+      function parseNodes (list) {
+        var i,
+            len = list.length;
 
-        for (j = 0; j < nlen; j += 1 ) {
-          filtered_nodes.push(nlist[j]);
+        for (i = 0; i < len; i += 1 ) {
+          filtered_nodes.push(list[i]);
         }
-
       } // end parseNodes
 
 
-      for (i = 0; i < len; i += 1) {
-        nodes = list[i][getter](filter);
+      function drillDown (list) {
+        var i,
+            len = list.length;
 
-        if (typeof nodes.length === 'undefined') {
-          filtered_nodes.push(nodes);
+        for (i = 0; i < len; i += 1) {
+          nodes = list[i][getter](filter);
+
+          if (nodes.constructor === HTMLCollection ||
+              nodes.constructor === NodeList) {
+            parseNodes(nodes);
+          }
+          else {
+            filtered_nodes.push(nodes);
+          }
         }
-        else {
-          parseNodes(nodes);
+      } // end drillDown
+
+
+      function matchSpecifier (list) {
+        var i,
+            len = list.length,
+            specifier,
+            rx = new RegExp(filter);
+
+        for (i = 0; i < len; i += 1) {
+          specifier = list[i][getter];
+
+          if (rx.test(specifier)) {
+            filtered_nodes.push(list[i]);
+          }
         }
+      } // end matchSpecifier
+
+
+      if (/className|id/.test(getter)) {
+        matchSpecifier(list);
+      }
+      else {
+        drillDown(list);
       }
 
       scope = storeUniques(filtered_nodes);
       return scope;
 
-    } // end filterNodeList
+    } // end filterHTMLCollection
 
     function selectFromString () {
-      var tokens = selector.match(select_rx) || [],
-          flags = selector.split(select_rx) || [],
+      var tokens = selector.match(/[a-zA-Z0-9_-]\.[a-zA-Z0-9_-]|\s+\.|^\.|[a-zA-Z0-9_-]#[a-zA-Z0-9_-]|\s+#|^#|\s+|\./g) || [],
+          flags = selector.split(/\s+|\.|#/g) || [],
           i, len;
       
       // remove any empty strings Array.split might have added
@@ -85,9 +112,6 @@
       }); // end flags.filter
 
       len = flags.length;
-
-      console.log(tokens);
-      console.log(flags);
 
       if (tokens.length < flags.length) {
         tokens.unshift('tagname');
@@ -103,19 +127,24 @@
           getter = 'getElementById';
         }
 
-        if (/tagname|\s+[a-zA-Z]/.test(tokens[i])) {
+        if (/tagname|\s+/.test(tokens[i]) && !/\.|#/.test(tokens[i])) {
           getter = 'getElementsByTagName';
         }
 
-        console.log('The token is ' + tokens[i] + '.');
-        console.log('The flag is ' + flags[i] + '.');
+        if (/[a-zA-Z0-9_-]\.[a-zA-Z0-9_-]/.test(tokens[i])) {
+          getter = 'className';
+        }
 
-        // put singular DOM references, but not NodeLists, in an array
-        // filterNodeList always stores its results in a true array
+        if (/[a-zA-Z0-9_-]#[a-zA-Z0-9_-]/.test(tokens[i])) {
+          getter = 'id';
+        }
+
+        // put singular DOM references, but not HTMLCollections, in an array
+        // filterHTMLCollection always stores its results in a true array
         if (typeof scope.length === 'undefined') {
           scope = [scope];
         }
-        filterNodeList(scope, getter, flags[i]);
+        filterHTMLCollection(scope, getter, flags[i]);
 
       } // end tokens/flags loop
 
