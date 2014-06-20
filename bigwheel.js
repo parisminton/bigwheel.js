@@ -14,8 +14,7 @@
 
     // ### bW selector engine and constructor ###
     var scope = document,
-        getter,
-        instance;
+        getter;
 
     function filterHTMLCollection (list, getter, filter) {
       var i,
@@ -159,10 +158,54 @@
     }
 
     Bigwheel.prototype = {
+      all : function (func, args) {
+        var args_array = [],
+            i;
+
+        // copy everything to args_array
+        // args, ^above^, should be an array-like object. if not, convert it.
+        if (!args.length) {
+          for (i = 1; i < arguments.length; i += 1) {
+            args_array.push(arguments[i]);
+          }
+        }
+        else {
+          for (i = 0; i < args.length; i += 1) {
+            args_array.push(args[i]);
+          }
+        }
+
+        for (i = 0; i < this.length; i += 1) {
+          args_array.unshift(this[i]);
+          func.apply(this, args_array);
+          args_array.shift();
+        }
+
+        return this;
+      },
+
       event_registry : { count : 0 },
+
+      css : function (prop, value) {
+        if (!prop) { return this; }
+
+        function setCSS (elem, prop, value) {
+          elem.style[prop] = value;
+        }
+
+        return this.all(setCSS, arguments);
+      },
 
       listenFor : function (elem, evt, func, capt, aargs) {
         var proc_id;
+
+        function lF () {
+        }
+
+        this.all(lF, arguments);
+
+        console.log(this.selector);
+        console.log(this.length);
         
         // W3C-compliant browsers
         if (elem.addEventListener) {
