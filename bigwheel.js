@@ -155,7 +155,7 @@
       });
       
       instance.selector = selector;
-    }
+    } // end Bigwheel constructor
 
     Bigwheel.prototype = {
       all : function (func, args) {
@@ -182,9 +182,9 @@
         }
 
         return this;
-      },
+      }, // end bW.all
 
-      event_registry : { count : 0 },
+      event_registry : { length : 0 },
 
       css : function (prop, value) {
         if (!prop) { return this; }
@@ -194,62 +194,64 @@
         }
 
         return this.all(setCSS, arguments);
-      },
+      }, // end bW.css
 
-      listenFor : function (elem, evt, func, capt, aargs) {
-        var proc_id;
+      listenFor : function (evt, func, capt, aargs) {
 
-        function lF () {
-        }
+        function listen (elem, evt, func, capt, aargs) {
+          var bWObj = this;
 
-        this.all(lF, arguments);
+          function add () {
+            // W3C-compliant browsers
+            if (elem.addEventListener) {
+              if (!bWObj.listener_model) { bWObj.listener_model = 'addEventListener'; }
+              elem.addEventListener(evt, func, capt);
+            }
+            // IE pre-9
+            else {
+              if (elem.attachEvent) { 
+                if (!bWObj.listener_model) { bWObj.listener_model = 'attachEvent'; }
+                elem.attachEvent(('on' + evt), func);
+              }
+              // fall back to DOM level 0
+              else { 
+                if (!bWObj.listener_model) { bWObj.listener_model = 'onevent'; }
+                elem['on' + evt] = func;
+              }
+            }
+          } // end add
 
-        console.log(this.selector);
-        console.log(this.length);
-        
-        // W3C-compliant browsers
-        if (elem.addEventListener) {
-          if (!this.listener_model) { this.listener_model = 'addEventListener'; }
-          elem.addEventListener(evt, func, capt);
-        }
-        // IE pre-9
-        else {
-          if (elem.attachEvent) { 
-            if (!this.listener_model) { this.listener_model = 'attachEvent'; }
-            elem.attachEvent(('on' + evt), func);
-          }
-          // fall back to DOM level 0
-          else { 
-            if (!this.listener_model) { this.listener_model = 'onevent'; }
-            elem['on' + evt] = func;
-          }
-        }
-        
-        // store these values in a registry, so we can retrieve them
-        proc_id = ('process' + (this.registry.count + 1)); // unique id
-        this.registry[proc_id] = {};
-        this.registry[proc_id].elem = elem;
-        this.registry[proc_id].evt = evt;
-        this.registry[proc_id].func = func;
-        this.registry[proc_id].capt = capt;
-        if (aargs) {
-          this.registry[proc_id].aargs = aargs; // additional arguments
-        }
-        else { 
-          this.registry[proc_id].aargs = [];
-        }
-        
-        // add a property to the function itself that stores the event type. by referencing the event type, we can recall the process ID and retrieve any additional arguments.
-        if (!func.reg_ids) {
-          func.reg_ids = {};
-        }
-        func.reg_ids[evt] = proc_id;
-        
-        this.registry.count += 1; // store the total number of registered listeners
-      }, // end listenFor
+          // store these values in a registry, so we can retrieve them
+          function register () {
+            var proc_id;
+
+            proc_id = (bWObj.event_registry.length); // unique id
+            // ### more valuable for the key to be a unique ID or the event type string?
+            bWObj.event_registry[proc_id] = {
+              elem : elem,
+              evt : evt,
+              func : func,
+              capt : capt,
+              aargs : aargs
+            };
+            
+            // store the process ID in the function itself, using the event type as a key. for retrieving any additional arguments.
+            if (!func.reg_ids) {
+              func.reg_ids = {};
+            }
+            func.reg_ids[evt] = proc_id;
+            bWObj.event_registry.length += 1;
+          } // end register
+
+          add();
+          register();
+        } // end listen
+
+        return this.all(listen, arguments);
+      }, // end bW.listenFor
 
       stopListening : function () {
-      }
+      } // end bW.stopListening
 
     } // end Bigwheel prototype
 
