@@ -251,7 +251,15 @@
       }, // end bW.listenFor
 
       stopListening : function () {
-      } // end bW.stopListening
+      }, // end bW.stopListening
+
+      before : function (elem) {
+        function insert (after, elem) {
+          after.parentNode.insertBefore(elem, after);
+        }
+
+        return this.all(insert, arguments);
+      } // end bW.before
 
     } // end Bigwheel prototype
 
