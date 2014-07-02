@@ -116,6 +116,7 @@
 
         if (/^#|\s+#/.test(tokens[i])) {
           getter = 'getElementById';
+          scope = document;
         }
 
         if (/tagname|\s+/.test(tokens[i]) && !/\.|#/.test(tokens[i])) {
