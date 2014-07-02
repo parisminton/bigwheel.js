@@ -6,7 +6,7 @@ Changelog
 
 *7/1/14*
 
-1. `bW.before` inserts a given element before each matched element in the DOM.
+1. `bW.before` and `bW.after` insert a given element relative to each matched element in the DOM.
 
 2. Fixed a bug where calling `getElementById` on an element that was itself selected by ID (`bW('#firstID #secondID');`) threw an error. This isn't the best way to select things, but supporting it shouldn't cause Bigwheel to choke.
 

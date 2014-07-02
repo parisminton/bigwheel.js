@@ -260,7 +260,15 @@
         }
 
         return this.all(insert, arguments);
-      } // end bW.before
+      }, // end bW.before
+
+      after : function (elem) {
+        function insert (before, elem) {
+          before.parentNode.insertBefore(elem, before.nextSibling);
+        }
+
+        return this.all(insert, arguments);
+      } // end bW.after
 
     } // end Bigwheel prototype
 
