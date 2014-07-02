@@ -4,6 +4,14 @@ bigwheel.js
 Changelog
 ---------
 
+*7/2/14*
+
+1. `bW.val` returns the value of the first matched element in the set.
+
+2. Initial attempt at `bW.first`, a way to isolate only the first of the matched elements. It needs to wrap this element in the `Bigwheel` object.
+
+
+
 *7/1/14*
 
 1. `bW.before` and `bW.after` insert a given element relative to each matched element in the DOM.
