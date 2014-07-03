@@ -6,7 +6,7 @@ Changelog
 
 *7/3/14*
 
-1. `bW.addClass` uses `classList` or falls back to `className`. 
+1. `bW.addClass` and `bW.removeClass` use `classList` or fall back to `className`. 
 
 2. Replacing the ECMAScript 5 Array methods with simpler constructions to keep things old-IE-friendly.
 

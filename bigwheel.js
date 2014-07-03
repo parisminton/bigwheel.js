@@ -267,7 +267,7 @@
               i,
               len;
 
-          // you don't know how many arguments you may get here
+          // we don't know how many arguments we may get here
           for (i = 1; i < arguments.length; i += 1) {
             addl_classes.push(arguments[i]);
           }
@@ -286,10 +286,50 @@
             }
             elem.className = class_list.join(' ');
           }
-        }
+        } // end setClass
 
         return this.all(setClass, args);
       }, // end bW.addClass
+
+      removeClass : function () {
+        var args = this.parseArray(arguments);
+
+        function setClass (elem) {
+          var retiring_classes = [],
+              retire,
+              class_list,
+              i,
+              j,
+              len;
+
+          // we don't know how many arguments we may get here
+          for (i = 1; i < arguments.length; i += 1) {
+            retiring_classes.push(arguments[i]);
+          }
+
+          len = retiring_classes.length;
+
+          if (elem.classList) {
+            for (i = 0; i < len; i += 1) {
+              elem.classList.remove(retiring_classes[i]);
+            }
+          }
+          else {
+            class_list = elem.className.split(' ');
+            for (i = 0; i < len; i += 1) {
+              retire = new RegExp(retiring_classes[i]);
+              for (j = 0; j < class_list.length; j += 1) {
+                if (retire.test(class_list[j])) {
+                  class_list.splice(j, 1);
+                }
+              }
+            }
+            elem.className = class_list.join(' ');
+          }
+        } // end setClass
+
+        return this.all(setClass, args);
+      }, // end bW.removeClass
 
       listenFor : function (evt, func, capt, aargs) {
 
