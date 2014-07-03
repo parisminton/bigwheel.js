@@ -147,13 +147,14 @@
     }
 
     function Bigwheel (elements) {
-      var instance = this;
+      var instance = this,
+          i,
+          len = elements.length;
 
-      elements.forEach(function (elem, ndx) {
-        // methods need to apply these elements
-        instance[ndx] = elem;
-        instance.length = (ndx + 1);
-      });
+      for (i = 0; i < len; i += 1) {
+        instance[i] = elements[i];
+        instance.length = (i + 1);
+      }
       
       instance.selector = selector;
     } // end Bigwheel constructor
