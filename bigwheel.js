@@ -222,6 +222,64 @@
         return this.all(setCSS, arguments);
       }, // end bW.css
 
+      addClass : function (classes) {
+        var args = [],
+            filtered = [],
+            i,
+            len = arguments.length;
+
+        if (len > 1) {
+          for (i = 0; i < len; i += 1) {
+            if (typeof arguments[i] === 'string') {
+              args.push(arguments[i]);
+            }
+          }
+        }
+        else {
+          if (typeof arguments[0] === 'object') {
+            for (key in arguments[0]) {
+              args.push(arguments[0][key]);
+            }
+          }
+          else if (typeof arguments[0] === 'string') {
+            args = arguments[0].split(/[,\s+|\s+|,]/);
+            for (i = 0; i < args.length; i += 1) {
+              if (args[i].length) { filtered.push(args[i]); }
+            }
+            args = filtered;
+          }
+        }
+
+        function setClass (elem) {
+          var addl_classes = [],
+              class_list,
+              i,
+              len;
+
+          // you don't know how many arguments you may get here
+          for (i = 1; i < arguments.length; i += 1) {
+            addl_classes.push(arguments[i]);
+          }
+
+          len = addl_classes.length;
+
+          if (elem.classList) {
+            for (i = 0; i < len; i += 1) {
+              elem.classList.add(addl_classes[i]);
+            }
+          }
+          else {
+            class_list = elem.className.split(/[,+|\s+|,\s+]/);
+            for (i = 0; i < len; i += 1) {
+              class_list.push(addl_classes[i]);
+            }
+            elem.className = class_list.join(' ');
+          }
+        }
+
+        return this.all(setClass, args);
+      }, // end bW.addClass
+
       listenFor : function (evt, func, capt, aargs) {
 
         function listen (elem, evt, func, capt, aargs) {
