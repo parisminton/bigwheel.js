@@ -10,6 +10,7 @@ Changelog
 
 2. Replacing the ECMAScript 5 Array methods with simpler constructions to keep things old-IE-friendly.
 
+3. `bW.parseArray` makes string -> array conversion easier.
 
 
 *7/2/14*

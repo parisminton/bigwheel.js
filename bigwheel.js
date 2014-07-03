@@ -160,6 +160,12 @@
     } // end Bigwheel constructor
 
     Bigwheel.prototype = {
+
+      // ### PROPERTIES
+      event_registry : { length : 0 },
+
+
+      // ### HELPERS: will probably be most useful to other bW methods, not users.
       all : function (func, args) {
         var args_array = [],
             i;
@@ -210,19 +216,7 @@
         return this; // ### TODO: return first element wrapped in bW wrapper ###
       }, // end bW.first
 
-      event_registry : { length : 0 },
-
-      css : function (prop, value) {
-        if (!prop) { return this; }
-
-        function setCSS (elem, prop, value) {
-          elem.style[prop] = value;
-        }
-
-        return this.all(setCSS, arguments);
-      }, // end bW.css
-
-      addClass : function (classes) {
+      parseArray : function () {
         var args = [],
             filtered = [],
             i,
@@ -251,6 +245,21 @@
             args = filtered;
           }
         }
+        return args;
+      }, // end bW.parseArray
+
+      css : function (prop, value) {
+        if (!prop) { return this; }
+
+        function setCSS (elem, prop, value) {
+          elem.style[prop] = value;
+        }
+
+        return this.all(setCSS, arguments);
+      }, // end bW.css
+
+      addClass : function (classes) {
+        var args = this.parseArray(classes);
 
         function setClass (elem) {
           var addl_classes = [],
