@@ -258,8 +258,8 @@
         return this.all(setCSS, arguments);
       }, // end bW.css
 
-      addClass : function (classes) {
-        var args = this.parseArray(classes);
+      addClass : function () {
+        var args = this.parseArray(arguments);
 
         function setClass (elem) {
           var addl_classes = [],
@@ -280,7 +280,7 @@
             }
           }
           else {
-            class_list = elem.className.split(/[,+|\s+|,\s+]/);
+            class_list = elem.className.split(' ');
             for (i = 0; i < len; i += 1) {
               class_list.push(addl_classes[i]);
             }
