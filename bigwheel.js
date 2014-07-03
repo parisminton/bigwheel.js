@@ -93,22 +93,22 @@
     function selectFromString () {
       var tokens = selector.match(/[a-zA-Z0-9_-]\.[a-zA-Z0-9_-]|\s+\.|^\.|[a-zA-Z0-9_-]#[a-zA-Z0-9_-]|\s+#|^#|\s+|\./g) || [],
           flags = selector.split(/\s+|\.|#/g) || [],
+          filtered = [],
           i, len;
       
       // remove any empty strings Array.split might have added
-      flags = flags.filter(function (item) {
-        if (item.length > 0) {
-          return item;
+      for (i = 0; i < flags.length; i += 1) {
+        if (flags[i].length) {
+          filtered.push(flags[i]);
         }
-      }); // end flags.filter
-
-      len = flags.length;
+      }
+      flags = filtered;
 
       if (tokens.length < flags.length) {
         tokens.unshift('tagname');
       }
 
-      for (i = 0; i < len; i += 1) {
+      for (i = 0; i < flags.length; i += 1) {
 
         if (/^\.|\s+\./.test(tokens[i])) {
           getter = 'getElementsByClassName';
@@ -243,6 +243,8 @@
           }
           else if (typeof arguments[0] === 'string') {
             args = arguments[0].split(/[,\s+|\s+|,]/);
+
+            // remove any empty strings Array.split might have added
             for (i = 0; i < args.length; i += 1) {
               if (args[i].length) { filtered.push(args[i]); }
             }
