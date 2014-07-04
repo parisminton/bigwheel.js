@@ -6,7 +6,7 @@ Changelog
 
 *7/4/14*
 
-1. `bW.data` reads data attributes.
+1. `bW.data` reads and writes data attributes.
 
 
 *7/3/14*

@@ -408,10 +408,36 @@
         if (this[0].value) { return this[0].value; }
       }, // end bW.val
 
-      data : function (selector) {
-        if (this[0].dataset) { return this[0].dataset[selector]; }
+      data : function (selector, new_value) {
+        var instance = this;
+
+        function getData (slctr) {
+          if (instance[0].dataset) { return instance[0].dataset[slctr]; }
+          else {
+            return instance[0].getAttribute('data-' + slctr);
+          }
+        }
+
+        function setData (slctr, val) {
+          var data_attr;
+
+          if (instance[0].dataset) { instance[0].dataset[slctr] = val; }
+          else if (instance[0].setAttribute) {
+            instance[0].setAttribute('data-' + slctr, val);
+          }
+          else if (instance[0].attributes.setNamedItem) {
+            data_attr = document.createAttribute('data-' + slctr);
+            data_attr.nodeValue = val;
+            instance[0].attributes.setNamedItem(data_attr);
+          }
+        }
+        
+        if (!new_value) {
+          return getData(selector);
+        }
         else {
-          return this[0].getAttribute('data-' + selector);
+          setData(selector, new_value);
+          return this;
         }
       } // end bW.data
 
