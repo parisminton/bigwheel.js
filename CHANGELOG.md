@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*7/4/14*
+
+1. `bW.data` reads data attributes.
+
+
 *7/3/14*
 
 1. `bW.addClass` and `bW.removeClass` use `classList` or fall back to `className`. 

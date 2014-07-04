@@ -9,7 +9,6 @@
 
 (function () {
 
-  // ### TODO ... if bW exists, add this function to it as a property ###
   var bW = (typeof window.bW === 'function') ? window.bW : function (selector) {
 
     // ### bW selector engine and constructor ###
@@ -404,9 +403,17 @@
         return this.all(insert, arguments);
       }, // end bW.after
 
-      val : function () { // returns a value, not the bW object
+      // ### METHODS that return values from a single element, not the bW object
+      val : function () {
         if (this[0].value) { return this[0].value; }
-      } // end bW.val
+      }, // end bW.val
+
+      data : function (selector) {
+        if (this[0].dataset) { return this[0].dataset[selector]; }
+        else {
+          return this[0].getAttribute('data-' + selector);
+        }
+      } // end bW.data
 
     } // end Bigwheel prototype
 
