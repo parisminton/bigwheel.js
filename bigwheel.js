@@ -159,8 +159,6 @@
         instance[i] = elements[i];
         instance.length = (i + 1);
       }
-      
-      instance.selector = selector;
     } // end Bigwheel constructor
 
     Bigwheel.prototype = {
@@ -170,6 +168,19 @@
 
 
       // ### HELPERS: will probably be most useful to other bW methods, not users.
+      wrap : function (elem_refs) {
+        var args_array = [],
+            i;
+
+        if (!elem_refs.length && /HTML/.test(elem_refs.constructor.toString())) {
+          elem_refs = [elem_refs];
+        }
+
+        if (elem_refs.length) {
+          return new Bigwheel(elem_refs);
+        }
+      }, // end bW.wrap
+
       all : function (func, args) {
         var args_array = [],
             i;
@@ -449,7 +460,6 @@
 
     } // end Bigwheel prototype
 
-    debugger;
     return new Bigwheel(selectElements(selector));
 
   }; // end bW selector engine and constructor
