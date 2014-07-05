@@ -146,6 +146,10 @@
       if (typeof selectr === 'string') {
         selectFromString(selectr);
       }
+      else if (/HTML/.test(selectr.constructor.toString())) {
+        if (!selectr.length) { selectr = [selectr] };
+        scope = selectr;
+      }
 
       return scope;
     } // end selectElements
@@ -456,7 +460,20 @@
           setData(selector, new_value);
           return this;
         }
-      } // end bW.data
+      }, // end bW.data
+
+      find : function (slctr) {
+        var collection = [],
+            i,
+            new_scope;
+
+        for (i = 0; i < this.length; i += 1) {
+          collection.push(this[i]);
+        }
+
+        new_scope = selectElements(slctr, collection);
+        return new Bigwheel(new_scope);
+      } // end bW.find
 
     } // end Bigwheel prototype
 

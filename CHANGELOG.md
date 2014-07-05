@@ -4,6 +4,15 @@ bigwheel.js
 Changelog
 ---------
 
+*7/5/14*
+
+1. `bW.find` takes a selector and grabs all the matching elements within the scope of the current ones. It returns a new `Bigwheel` object.
+
+2. The `bW.wrap` helper accepts a DOM reference and returns a Bigwheel object.
+
+3. Got rid of the `selector` property.
+
+
 *7/4/14*
 
 1. `bW.data` reads and writes data attributes.
