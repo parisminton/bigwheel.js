@@ -211,28 +211,8 @@
         return this;
       }, // end bW.all
 
-      first : function (func, args) {
-        var args_array = [],
-            i;
-
-        // copy everything to args_array
-        // args, ^above^, should be an array-like object. if not, convert it.
-        if (!args.length) {
-          for (i = 1; i < arguments.length; i += 1) {
-            args_array.push(arguments[i]);
-          }
-        }
-        else {
-          for (i = 0; i < args.length; i += 1) {
-            args_array.push(args[i]);
-          }
-        }
-
-        args_array.unshift(this[0]);
-        func.apply(this, args_array);
-        args_array.shift();
-
-        return this; // ### TODO: return first element wrapped in bW wrapper ###
+      first : function () {
+        return this.wrap(this[0]);
       }, // end bW.first
 
       parseArray : function () {

@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*7/6/14*
+
+1. `bW.first` returns the first matched element in the set.
+
+
 *7/5/14*
 
 1. `bW.find` takes a selector and grabs all the matching elements within the scope of the current ones. It returns a new `Bigwheel` object.
