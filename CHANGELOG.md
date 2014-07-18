@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*7/18/14*
+
+1. `bW.stopListening` detaches events.
+
+
 *7/6/14*
 
 1. `bW.first` returns the first matched element in the set.

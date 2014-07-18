@@ -168,8 +168,7 @@
     Bigwheel.prototype = {
 
       // ### PROPERTIES
-      event_registry : { length : 0 },
-
+      event_registry : [],
 
       // ### HELPERS: will probably be most useful to other bW methods, not users.
       wrap : function (elem_refs) {
@@ -187,7 +186,8 @@
 
       all : function (func, args) {
         var args_array = [],
-            i;
+            i,
+            remove = 1;
 
         // copy everything to args_array
         // args, ^above^, should be an array-like object. if not, convert it.
@@ -203,9 +203,13 @@
         }
 
         for (i = 0; i < this.length; i += 1) {
+          if (func.fid && /listenFor|stopListening/.test(func.fid)) {
+            args_array.unshift(i);
+            remove = 2;
+          }
           args_array.unshift(this[i]);
           func.apply(this, args_array);
-          args_array.shift();
+          args_array.splice(0, remove);
         }
 
         return this;
@@ -333,7 +337,7 @@
 
       listenFor : function (evt, func, capt, aargs) {
 
-        function listen (elem, evt, func, capt, aargs) {
+        function listen (elem, ndx, evt, func, capt, aargs) {
           var bWObj = this;
 
           function add () {
@@ -358,34 +362,51 @@
 
           // store these values in a registry, so we can retrieve them
           function register () {
-            var proc_id;
+            var rx = /function ([a-zA-Z-_]*)\(/;
 
-            proc_id = (bWObj.event_registry.length); // unique id
             // ### more valuable for the key to be a unique ID or the event type string?
-            bWObj.event_registry[proc_id] = {
+            bWObj.event_registry[ndx] = {};
+            bWObj.event_registry[ndx][evt] = {
               elem : elem,
               evt : evt,
               func : func,
               capt : capt,
               aargs : aargs
             };
-            
-            // store the process ID in the function itself, using the event type as a key. for retrieving any additional arguments.
-            if (!func.reg_ids) {
-              func.reg_ids = {};
-            }
-            func.reg_ids[evt] = proc_id;
-            bWObj.event_registry.length += 1;
           } // end register
 
           add();
           register();
         } // end listen
+        listen.fid = 'listenFor';
 
         return this.all(listen, arguments);
       }, // end bW.listenFor
 
       stopListening : function () {
+        var instance = this;
+
+        function dontListen (elem, ndx, evt, func, capt) {
+
+          function remove () {
+            if (elem.removeEventListener) {
+              elem.removeEventListener(evt, func, capt);
+            }
+            else {
+              if (elem.detachEvent) {
+                elem.detachEvent(('on' + evt), func);
+              }
+              else {
+                elem[evt] = null;
+              }
+            }
+          } // end remove
+
+          remove();
+        } // end dontListen
+        dontListen.fid = 'stopListening';
+
+        return instance.all(dontListen, arguments);
       }, // end bW.stopListening
 
       before : function (elem) {
