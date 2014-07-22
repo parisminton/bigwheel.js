@@ -11,6 +11,8 @@
 
   var bW = (typeof window.bW === 'function') ? window.bW : function (selector) {
 
+    bW.forms = bW.forms || [];
+
     // ### bW selector engine and constructor ###
     function selectElements (selectr, scope) {
       var getter;
@@ -474,7 +476,29 @@
 
         new_scope = selectElements(slctr, collection);
         return new Bigwheel(new_scope);
-      } // end bW.find
+      }, // end bW.find
+
+      initForm : function (submit_selector, form_class_name) {
+        var form = this[0],
+            submit = selectElements(submit_selector),
+            instance = this,
+            fclass;
+
+        if (form_class_name) {
+          fclass = 'bW-form-' + form_class_name;
+        }
+
+        if (form.className && !/fclass/.test(form.className) ) {
+          form.className = fclass;
+        }
+
+        function Form (form_element) {
+          this.form = form;
+          this.submitbutton = submit;
+        }
+
+        Form.prototype = {};
+      } // end bW.initForm
 
     } // end Bigwheel prototype
 
