@@ -225,6 +225,7 @@
         var args = [],
             filtered = [],
             i,
+            key,
             len = arguments.length;
 
         if (len > 1) {
@@ -478,26 +479,56 @@
         return new Bigwheel(new_scope);
       }, // end bW.find
 
-      initForm : function (submit_selector, form_class_name) {
+      initForm : function (submit_selector, suffix) {
         var form = this[0],
-            submit = selectElements(submit_selector),
-            instance = this,
-            fclass;
+            submit,
+            form_obj,
+            prop,
+            form_proto = {},
+            f;
 
-        if (form_class_name) {
-          fclass = 'bW-form-' + form_class_name;
+        if (!submit_selector) {
+          throw new Error('bW.initForm should be invoked with a selector for a submit button.');
+        }
+        else {
+          submit = selectElements(submit_selector)[0];
         }
 
-        if (form.className && !/fclass/.test(form.className) ) {
-          form.className = fclass;
+        function BWForm (form_element, submit_button, class_suffix) {
+          var instance = this,
+              fclass;
+
+          instance[0] = form_element;
+          instance.submit_button = submit_button;
+          instance.length = 1;
+
+          if (class_suffix) {
+            fclass = 'bW-form-' + class_suffix;
+            if (!/fclass/.test(form.className)) {
+              form.className = fclass;
+            }
+            fclass = 'bW-submit-' + class_suffix;
+            if (!/fclass/.test(submit.className)) {
+              submit.className = fclass;
+            }
+          }
         }
 
-        function Form (form_element) {
-          this.form = form;
-          this.submitbutton = submit;
+        // ### BWForm prototype needs all the Bigwheel.prototype methods ###
+        for (prop in Bigwheel.prototype) {
+          form_proto[prop] = Bigwheel.prototype[prop];
         }
 
-        Form.prototype = {};
+        f = BWForm.prototype = form_proto;
+
+        f.lawyer = function () {
+          console.log('Don\'t let my wife marry a lawyer.');
+          return this;
+        }
+        // ### end BWForm prototype ###
+
+        bW.forms.push(form_obj = new BWForm(form, submit));
+        return form_obj;
       } // end bW.initForm
 
     } // end Bigwheel prototype
