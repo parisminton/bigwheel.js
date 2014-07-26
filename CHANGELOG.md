@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*7/25/14*
+
+1. The selector engine handles commas. This enables multiple selectors (`bW('#wrapper, .nav .button, .footer p')`).
+
+
 *7/18/14*
 
 1. `bW.stopListening` detaches events.

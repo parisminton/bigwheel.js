@@ -94,54 +94,77 @@
       } // end filterHTMLCollection
 
       function selectFromString (slctr) {
-        var tokens = slctr.match(/[a-zA-Z0-9_-]\.[a-zA-Z0-9_-]|\s+\.|^\.|[a-zA-Z0-9_-]#[a-zA-Z0-9_-]|\s+#|^#|\s+|\./g) || [],
-            flags = slctr.split(/\s+|\.|#/g) || [],
-            filtered = [],
-            i, len;
-        
-        // remove any empty strings Array.split might have added
-        for (i = 0; i < flags.length; i += 1) {
-          if (flags[i].length) {
-            filtered.push(flags[i]);
+        var slctr_array = slctr.split(','),
+            parsed = [],
+            i,
+            j;
+
+        function select (s) {
+          var tokens = s.match(/[a-zA-Z0-9_-]\.[a-zA-Z0-9_-]|\s+\.|^\.|[a-zA-Z0-9_-]#[a-zA-Z0-9_-]|\s+#|^#|\s+|\./g) || [],
+              flags = s.split(/\s+|\.|#/g) || [],
+              filtered = [],
+              i;
+          
+          // remove any empty strings Array.split might have added
+          for (i = 0; i < flags.length; i += 1) {
+            if (flags[i].length) {
+              filtered.push(flags[i]);
+            }
           }
+          flags = filtered;
+
+          if (tokens.length < flags.length) {
+            tokens.unshift('tagname');
+          }
+
+          for (i = 0; i < flags.length; i += 1) {
+
+            if (/^\.|\s+\./.test(tokens[i])) {
+              getter = 'getElementsByClassName';
+            }
+
+            if (/^#|\s+#/.test(tokens[i])) {
+              getter = 'getElementById';
+              scope = document;
+            }
+
+            if (/tagname|\s+/.test(tokens[i]) && !/\.|#/.test(tokens[i])) {
+              getter = 'getElementsByTagName';
+            }
+
+            if (/[a-zA-Z0-9_-]\.[a-zA-Z0-9_-]/.test(tokens[i])) {
+              getter = 'className';
+            }
+
+            if (/[a-zA-Z0-9_-]#[a-zA-Z0-9_-]/.test(tokens[i])) {
+              getter = 'id';
+            }
+
+            // put singular DOM references, but not HTMLCollections, in an array
+            // filterHTMLCollection always stores its results in a true array
+            if (typeof scope.length === 'undefined') {
+              scope = [scope];
+            }
+            filterHTMLCollection(scope, getter, flags[i]);
+
+          } // end tokens/flags loop
+
+        } // end select
+
+        if (slctr_array.length > 1) {
+          for (i = 0; i < slctr_array.length; i += 1) {
+            scope = document; // needs resetting for each call
+            select(slctr_array[i].replace(/^\s+/, ''));
+            // scope is always an array at this point. we just want its members.
+            for (j = 0; j < scope.length; j += 1) {
+              parsed.push(scope[j]);
+            }
+          }
+          scope = parsed;
         }
-        flags = filtered;
-
-        if (tokens.length < flags.length) {
-          tokens.unshift('tagname');
+        else {
+          select(slctr_array[0]);
         }
-
-        for (i = 0; i < flags.length; i += 1) {
-
-          if (/^\.|\s+\./.test(tokens[i])) {
-            getter = 'getElementsByClassName';
-          }
-
-          if (/^#|\s+#/.test(tokens[i])) {
-            getter = 'getElementById';
-            scope = document;
-          }
-
-          if (/tagname|\s+/.test(tokens[i]) && !/\.|#/.test(tokens[i])) {
-            getter = 'getElementsByTagName';
-          }
-
-          if (/[a-zA-Z0-9_-]\.[a-zA-Z0-9_-]/.test(tokens[i])) {
-            getter = 'className';
-          }
-
-          if (/[a-zA-Z0-9_-]#[a-zA-Z0-9_-]/.test(tokens[i])) {
-            getter = 'id';
-          }
-
-          // put singular DOM references, but not HTMLCollections, in an array
-          // filterHTMLCollection always stores its results in a true array
-          if (typeof scope.length === 'undefined') {
-            scope = [scope];
-          }
-          filterHTMLCollection(scope, getter, flags[i]);
-
-        } // end tokens/flags loop
 
       } // end selectFromString
 
@@ -501,6 +524,7 @@
           instance[0] = form_element;
           instance.submit_button = submit_button;
           instance.length = 1;
+          instance.data = {};
 
           if (class_suffix) {
             fclass = 'bW-form-' + class_suffix;
@@ -521,10 +545,29 @@
 
         f = BWForm.prototype = form_proto;
 
+        f.collectFields = function (form, required_fields, optional_fields) {
+          var instance = this,
+              fields;
+
+          $(fields).not('.submitphoto');
+
+          f.fields = fields;
+          return fields;
+        } // end BWForm.collectFields
+
+        f.addToTests = function (test) {
+          f.tests = f.tests || [];
+          f.tests.push(test);
+        }
+
         f.lawyer = function () {
           console.log('Don\'t let my wife marry a lawyer.');
           return this;
         }
+
+        f.init = function () {
+          var instance = this;
+        } // end BWForm.init
         // ### end BWForm prototype ###
 
         bW.forms.push(form_obj = new BWForm(form, submit));
