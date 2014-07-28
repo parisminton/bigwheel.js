@@ -184,8 +184,29 @@
           i,
           len = elements.length;
 
+      function generateId () {
+        var alpha = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            id = '', 
+            i;
+
+        function pick () {
+          if (Math.random() > 0.5) {
+            id += Math.floor(Math.random() * 10);
+          }
+          else {
+            id += alpha[Math.floor(Math.random() * 52)];
+          }
+        }
+
+        for (i = 0; i < 5; i += 1) {
+          pick();
+        }
+        return id;
+      } // end generateId
+
       for (i = 0; i < len; i += 1) {
         instance[i] = elements[i];
+        instance[i].bWid = generateId();
         instance.length = (i + 1);
       }
     } // end Bigwheel constructor

@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*7/27/14*
+
+1. The Bigwheel constructor generates a unique ID for each matched element, stored in the element's `bWid` property.
+
+
 *7/25/14*
 
 1. The selector engine handles commas. This enables multiple selectors (`bW('#wrapper, .nav .button, .footer p')`).
