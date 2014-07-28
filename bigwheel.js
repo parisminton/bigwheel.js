@@ -214,7 +214,7 @@
     Bigwheel.prototype = {
 
       // ### PROPERTIES
-      event_registry : [],
+      event_registry : {},
 
       // ### HELPERS: will probably be most useful to other bW methods, not users.
       wrap : function (elem_refs) {
@@ -385,23 +385,23 @@
       listenFor : function (evt, func, capt, aargs) {
 
         function listen (elem, ndx, evt, func, capt, aargs) {
-          var bWObj = this;
+          var instance = this;
 
           function add () {
             // W3C-compliant browsers
             if (elem.addEventListener) {
-              if (!bWObj.listener_model) { bWObj.listener_model = 'addEventListener'; }
+              if (!instance.listener_model) { instance.listener_model = 'addEventListener'; }
               elem.addEventListener(evt, func, capt);
             }
             // IE pre-9
             else {
               if (elem.attachEvent) { 
-                if (!bWObj.listener_model) { bWObj.listener_model = 'attachEvent'; }
+                if (!instance.listener_model) { instance.listener_model = 'attachEvent'; }
                 elem.attachEvent(('on' + evt), func);
               }
               // fall back to DOM level 0
               else { 
-                if (!bWObj.listener_model) { bWObj.listener_model = 'onevent'; }
+                if (!instance.listener_model) { instance.listener_model = 'onevent'; }
                 elem['on' + evt] = func;
               }
             }
@@ -412,8 +412,8 @@
             var rx = /function ([a-zA-Z-_]*)\(/;
 
             // ### more valuable for the key to be a unique ID or the event type string?
-            bWObj.event_registry[ndx] = {};
-            bWObj.event_registry[ndx][evt] = {
+            instance.event_registry[ndx] = {};
+            instance.event_registry[ndx][evt] = {
               elem : elem,
               evt : evt,
               func : func,
@@ -430,7 +430,7 @@
         return this.all(listen, arguments);
       }, // end bW.listenFor
 
-      stopListening : function () {
+      stopListening : function (evt, func) {
         var instance = this;
 
         function dontListen (elem, ndx, evt, func, capt) {
@@ -449,7 +449,21 @@
             }
           } // end remove
 
+          function unregister () {
+            var count = 0,
+                key;
+
+            delete instance.event_registry[ndx][evt];
+            for (key in instance.event_registry[ndx]) {
+              count += 1
+            }
+            if (count === 0) {
+              delete instance.event_registry[ndx];
+            }
+          } // end unregister
+
           remove();
+          unregister();
         } // end dontListen
         dontListen.fid = 'stopListening';
 

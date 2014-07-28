@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*7/28/14*
+
+1. Calling `bW.stopListening` for an event removes it from the registry.
+
+
 *7/27/14*
 
 1. The Bigwheel constructor generates a unique ID for each matched element, stored in the element's `bWid` property.
