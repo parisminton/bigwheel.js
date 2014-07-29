@@ -585,15 +585,26 @@
 
         f = BigwheelForm.prototype = form_proto;
 
-        f.collectFields = function (form, required_fields, optional_fields) {
+        f.collectFields = function () {
           var instance = this,
               fields;
 
-          $(fields).not('.submitphoto');
-
           f.fields = fields;
-          return fields;
+          return instance;
         } // end BigwheelForm.collectFields
+
+        f.setRequiredFields = function () {
+          var instance = this,
+              i;
+
+          f.required_fields = f.required_fields || [];
+
+          for (i = 0; i < arguments.length; i += 1) {
+            f.required_fields.push(arguments[i]);
+          }
+
+          return instance;
+        } // end BigwheelForm.setRequiredFields
 
         f.addToTests = function (test) {
           f.tests = f.tests || [];
