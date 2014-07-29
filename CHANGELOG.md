@@ -8,6 +8,8 @@ Changelog
 
 1. Calling `bW.stopListening` for an event removes it from the registry.
 
+2. `bW.event_registry` gets a `length` property, though it's an object.
+
 
 *7/27/14*
 

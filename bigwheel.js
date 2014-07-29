@@ -214,7 +214,7 @@
     Bigwheel.prototype = {
 
       // ### PROPERTIES
-      event_registry : {},
+      event_registry : { length: 0 },
 
       // ### HELPERS: will probably be most useful to other bW methods, not users.
       wrap : function (elem_refs) {
@@ -420,6 +420,7 @@
               capt : capt,
               aargs : aargs
             };
+            instance.event_registry.length += 1;
           } // end register
 
           add();
@@ -453,12 +454,16 @@
             var count = 0,
                 key;
 
-            delete instance.event_registry[ndx][evt];
-            for (key in instance.event_registry[ndx]) {
-              count += 1
-            }
-            if (count === 0) {
-              delete instance.event_registry[ndx];
+            if (instance.event_registry.length > 0) {
+              delete instance.event_registry[ndx][evt];
+              for (key in instance.event_registry[ndx]) {
+                count += 1
+              }
+              instance.event_registry.length = count;
+
+              if (count === 0) {
+                delete instance.event_registry[ndx];
+              }
             }
           } // end unregister
 
@@ -552,7 +557,7 @@
           submit = selectElements(submit_selector)[0];
         }
 
-        function BWForm (form_element, submit_button, class_suffix) {
+        function BigwheelForm (form_element, submit_button, class_suffix) {
           var instance = this,
               fclass;
 
@@ -573,12 +578,12 @@
           }
         }
 
-        // ### BWForm prototype needs all the Bigwheel.prototype methods ###
+        // ### BigwheelForm prototype needs all the Bigwheel.prototype methods ###
         for (prop in Bigwheel.prototype) {
           form_proto[prop] = Bigwheel.prototype[prop];
         }
 
-        f = BWForm.prototype = form_proto;
+        f = BigwheelForm.prototype = form_proto;
 
         f.collectFields = function (form, required_fields, optional_fields) {
           var instance = this,
@@ -588,7 +593,7 @@
 
           f.fields = fields;
           return fields;
-        } // end BWForm.collectFields
+        } // end BigwheelForm.collectFields
 
         f.addToTests = function (test) {
           f.tests = f.tests || [];
@@ -602,10 +607,10 @@
 
         f.init = function () {
           var instance = this;
-        } // end BWForm.init
-        // ### end BWForm prototype ###
+        } // end BigwheelForm.init
+        // ### end BigwheelForm prototype ###
 
-        bW.forms.push(form_obj = new BWForm(form, submit));
+        bW.forms.push(form_obj = new BigwheelForm(form, submit));
         return form_obj;
       } // end bW.initForm
 
