@@ -179,6 +179,100 @@
       return scope;
     } // end selectElements
 
+    function setClass (elem) {
+      var addl_classes = [],
+          class_list,
+          i,
+          len;
+
+      // we don't know how many arguments we may get here
+      for (i = 1; i < arguments.length; i += 1) {
+        addl_classes.push(arguments[i]);
+      }
+
+      len = addl_classes.length;
+
+      if (elem.classList) {
+        for (i = 0; i < len; i += 1) {
+          elem.classList.add(addl_classes[i]);
+        }
+      }
+      else {
+        class_list = elem.className.split(' ');
+        for (i = 0; i < len; i += 1) {
+          class_list.push(addl_classes[i]);
+        }
+        elem.className = class_list.join(' ');
+      }
+    } // end setClass
+
+    function subtractClass (elem) {
+      var retiring_classes = [],
+          retire,
+          class_list,
+          i,
+          j,
+          len;
+
+      // we don't know how many arguments we may get here
+      for (i = 1; i < arguments.length; i += 1) {
+        retiring_classes.push(arguments[i]);
+      }
+
+      len = retiring_classes.length;
+
+      if (elem.classList) {
+        for (i = 0; i < len; i += 1) {
+          elem.classList.remove(retiring_classes[i]);
+        }
+      }
+      else {
+        class_list = elem.className.split(' ');
+        for (i = 0; i < len; i += 1) {
+          retire = new RegExp(retiring_classes[i]);
+          for (j = 0; j < class_list.length; j += 1) {
+            if (retire.test(class_list[j])) {
+              class_list.splice(j, 1);
+            }
+          }
+        }
+        elem.className = class_list.join(' ');
+      }
+    } // end subtractClass
+
+    function parseArray () {
+      var args = [],
+          filtered = [],
+          i,
+          key,
+          len = arguments.length;
+
+      if (len > 1) {
+        for (i = 0; i < len; i += 1) {
+          if (typeof arguments[i] === 'string') {
+            args.push(arguments[i]);
+          }
+        }
+      }
+      else {
+        if (typeof arguments[0] === 'object') {
+          for (key in arguments[0]) {
+            args.push(arguments[0][key]);
+          }
+        }
+        else if (typeof arguments[0] === 'string') {
+          args = arguments[0].split(/[,\s+|\s+|,]/);
+
+          // remove any empty strings Array.split might have added
+          for (i = 0; i < args.length; i += 1) {
+            if (args[i].length) { filtered.push(args[i]); }
+          }
+          args = filtered;
+        }
+      }
+      return args;
+    } // end parseArray
+
     function Bigwheel (elements) {
       var instance = this,
           i,
@@ -265,39 +359,6 @@
         return this.wrap(this[0]);
       }, // end bW.first
 
-      parseArray : function () {
-        var args = [],
-            filtered = [],
-            i,
-            key,
-            len = arguments.length;
-
-        if (len > 1) {
-          for (i = 0; i < len; i += 1) {
-            if (typeof arguments[i] === 'string') {
-              args.push(arguments[i]);
-            }
-          }
-        }
-        else {
-          if (typeof arguments[0] === 'object') {
-            for (key in arguments[0]) {
-              args.push(arguments[0][key]);
-            }
-          }
-          else if (typeof arguments[0] === 'string') {
-            args = arguments[0].split(/[,\s+|\s+|,]/);
-
-            // remove any empty strings Array.split might have added
-            for (i = 0; i < args.length; i += 1) {
-              if (args[i].length) { filtered.push(args[i]); }
-            }
-            args = filtered;
-          }
-        }
-        return args;
-      }, // end bW.parseArray
-
       // ### METHODS THAT OPERATE ON ALL ELEMENTS IN THE SET and return the bW object
       css : function (prop, value) {
         if (!prop) { return this; }
@@ -310,76 +371,15 @@
       }, // end bW.css
 
       addClass : function () {
-        var args = this.parseArray(arguments);
-
-        function setClass (elem) {
-          var addl_classes = [],
-              class_list,
-              i,
-              len;
-
-          // we don't know how many arguments we may get here
-          for (i = 1; i < arguments.length; i += 1) {
-            addl_classes.push(arguments[i]);
-          }
-
-          len = addl_classes.length;
-
-          if (elem.classList) {
-            for (i = 0; i < len; i += 1) {
-              elem.classList.add(addl_classes[i]);
-            }
-          }
-          else {
-            class_list = elem.className.split(' ');
-            for (i = 0; i < len; i += 1) {
-              class_list.push(addl_classes[i]);
-            }
-            elem.className = class_list.join(' ');
-          }
-        } // end setClass
+        var args = parseArray(arguments);
 
         return this.all(setClass, args);
       }, // end bW.addClass
 
       removeClass : function () {
-        var args = this.parseArray(arguments);
+        var args = parseArray(arguments);
 
-        function setClass (elem) {
-          var retiring_classes = [],
-              retire,
-              class_list,
-              i,
-              j,
-              len;
-
-          // we don't know how many arguments we may get here
-          for (i = 1; i < arguments.length; i += 1) {
-            retiring_classes.push(arguments[i]);
-          }
-
-          len = retiring_classes.length;
-
-          if (elem.classList) {
-            for (i = 0; i < len; i += 1) {
-              elem.classList.remove(retiring_classes[i]);
-            }
-          }
-          else {
-            class_list = elem.className.split(' ');
-            for (i = 0; i < len; i += 1) {
-              retire = new RegExp(retiring_classes[i]);
-              for (j = 0; j < class_list.length; j += 1) {
-                if (retire.test(class_list[j])) {
-                  class_list.splice(j, 1);
-                }
-              }
-            }
-            elem.className = class_list.join(' ');
-          }
-        } // end setClass
-
-        return this.all(setClass, args);
+        return this.all(subtractClass, args);
       }, // end bW.removeClass
 
       listenFor : function (evt, func, capt, aargs) {
@@ -542,7 +542,15 @@
         return new Bigwheel(new_scope);
       }, // end bW.find
 
-      initForm : function (submit_selector, suffix) {
+      remove : function () {
+        function removeElement (elem) {
+          elem.parentNode.removeChild(elem);
+        }
+
+        return this.all(removeElement, arguments);
+      }, // end bW.remove
+
+      setForm : function (submit_selector, suffix) {
         var form = this[0],
             submit,
             form_obj,
@@ -551,7 +559,7 @@
             f;
 
         if (!submit_selector) {
-          throw new Error('bW.initForm should be invoked with a selector for a submit button.');
+          throw new Error('bW.setForm should be invoked with a selector for a submit button.');
         }
         else {
           submit = selectElements(submit_selector)[0];
@@ -589,18 +597,28 @@
           var instance = this,
               fields;
 
+          // grab all inputs and textareas, minus the submit button
+
           f.fields = fields;
           return instance;
         } // end BigwheelForm.collectFields
 
-        f.setRequiredFields = function () {
+        f.setRequiredFields = function (slctr) {
           var instance = this,
-              i;
+              i,
+              rf = selectElements(slctr),
+              data_attr;
 
-          f.required_fields = f.required_fields || [];
-
-          for (i = 0; i < arguments.length; i += 1) {
-            f.required_fields.push(arguments[i]);
+          for (i = 0; i < rf.length; i += 1) {
+            if (rf[i].dataset) { rf[i].dataset.required = true; }
+            else if (rf[i].setAttribute) {
+              rf[i].setAttribute('data-required', true);
+            }
+            else if (rf[i].attributes.setNamedItem) {
+              data_attr = document.createAttribute('data-required');
+              data_attr.nodeValue = true;
+              rf[i].attributes.setNamedItem(data_attr);
+            }
           }
 
           return instance;
@@ -609,7 +627,7 @@
         f.addToTests = function (test) {
           f.tests = f.tests || [];
           f.tests.push(test);
-        }
+        } // end BigwheelForm.addToTests
 
         f.lawyer = function () {
           console.log('Don\'t let my wife marry a lawyer.');
@@ -619,11 +637,76 @@
         f.init = function () {
           var instance = this;
         } // end BigwheelForm.init
+
+        f.readyToSubmitForm = function () {
+          var ready_to_submit = true,
+              tests = [
+                f.areFieldsEmpty,
+                f.outsideSubmissionLimit,
+                f.outsideTextLimit
+              ],
+              i;
+
+          f.unBruiseFields();
+
+          bW('.validation-error-message').remove();
+          if (arguments.length > 0) {
+            for (i = 0; i < arguments.length; i+= 0) {
+              tests.push(arguments [i]);
+            }
+          }
+
+          for (i = 0; i < tests.length; i += 1) {
+            // each test is for an error, so if one returns true, something\'s wrong
+            if (tests[i](f.fields, f.event_obj.target)) {
+              ready_to_submit = false;
+              // bW('.submitphoto').removeClass('ready');
+            }
+          }
+          // bW('.submitphoto').addClass('ready');
+          return ready_to_submit;
+        } // end readyToSubmitForm
+
+        f.sendData = function () {
+          f.collectValuesAsJSON();
+          f.collectImagesAsJSON();
+          f.collectLocationDescriptionsAsJSON();
+
+          ajaxOpts = {
+            type: 'POST',
+            url: url_goes_here,
+            data: f.JSONData,
+            success: function (data) {
+              f.showThanks();
+            },
+            error: function (e, status, error_thrown) {
+              console.log('Form at ' + document.location.href + ' failed to submit with the error: "' + e.status + ' ' + error_thrown + '".');
+              f.addErrorMessage('There was a problem processing your submission. Please try again.');
+              form.find('.field').first().addClass('validation-warning');
+              f.showErrorToast();
+              form.find('.field').first().removeClass('validation-warning');
+            }
+          }
+
+          bW.ajax(ajaxOpts);
+        } // end BigwheelForm.sendData
+
+        f.submitHandler = function (evt) {
+          evt.preventDefault();
+          f.event_obj = evt;
+          f.collectFields();
+          if (f.readyToSubmitForm()) {
+            f.sendData();
+          }
+          else {
+            f.showErrorToast();
+          }
+        }
         // ### end BigwheelForm prototype ###
 
-        bW.forms.push(form_obj = new BigwheelForm(form, submit));
+        bW.forms.push(form_obj = new BigwheelForm(form, submit, suffix));
         return form_obj;
-      } // end bW.initForm
+      } // end bW.setForm
 
     } // end Bigwheel prototype
 

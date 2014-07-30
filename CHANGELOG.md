@@ -4,6 +4,15 @@ bigwheel.js
 Changelog
 ---------
 
+*7/30/14*
+
+1. `bW.remove` detaches all matched elements from the DOM.
+
+2. `bW.setRequiredFields` tells a form instance which fields cannot be ignored.
+
+3. A few helpers get moved to the bW wrapper.
+
+
 *7/28/14*
 
 1. Calling `bW.stopListening` for an event removes it from the registry.
