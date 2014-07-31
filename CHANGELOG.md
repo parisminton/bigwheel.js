@@ -4,9 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
-*8/1/14*
+*7/31/14*
 
 1. The Bigwheel constructor stores each element reference's index in its own `ndx` property.
+
+2. `bW.not` excludes elements from the selected set.
 
 
 *7/30/14*

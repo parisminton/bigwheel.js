@@ -304,6 +304,10 @@
         instance[i].bWid = generateId();
         instance.length = (i + 1);
       }
+
+      if (len === 0) {
+        instance.length = 0;
+      }
     } // end Bigwheel constructor
 
     Bigwheel.prototype = {
@@ -546,28 +550,39 @@
       }, // end bW.remove
 
       not : function (slctr) {
-        var instance = this,
-            comparison_set = selectElements(slctr);
+        var comparison_set = selectElements(slctr);
 
-        function recalculate () {
+        function recount (inst) {
+          var remainders = [],
+              i;
+
+          for (i = 0; i < inst.length; i += 1) {
+            if (inst[i]) {
+              remainders.push(inst[i]);
+              delete inst[i];
+            }
+          }
+
+          for (i = 0; i < remainders.length; i += 1) {
+            inst[i] = remainders[i];
+          }
+          inst.length = remainders.length;
         }
 
         function compare (elem) {
           var i,
               comparator = arguments[0];
 
-          console.log(comparator);
-
           for (i = 1; i < arguments.length; i += 1) {
             if (comparator === arguments[i]) {
-              console.log('Wunderbar.');
-              console.log(comparator.ndx);
-              console.log(arguments[i]);
+              delete this[comparator.ndx];
+              break;
             }
           }
         }
-
-        return this.all(compare, comparison_set);
+        this.all(compare, comparison_set);
+        recount(this);
+        return this;
       }, // end bW.remove
 
       setForm : function (submit_selector, suffix) {
