@@ -179,7 +179,7 @@
       return scope;
     } // end selectElements
 
-    function setClass (elem) {
+    function plusClass (elem) {
       var addl_classes = [],
           class_list,
           i,
@@ -204,9 +204,9 @@
         }
         elem.className = class_list.join(' ');
       }
-    } // end setClass
+    } // end plusClass
 
-    function subtractClass (elem) {
+    function minusClass (elem) {
       var retiring_classes = [],
           retire,
           class_list,
@@ -238,7 +238,7 @@
         }
         elem.className = class_list.join(' ');
       }
-    } // end subtractClass
+    } // end minusClass
 
     function parseArray () {
       var args = [],
@@ -373,13 +373,13 @@
       addClass : function () {
         var args = parseArray(arguments);
 
-        return this.all(setClass, args);
+        return this.all(plusClass, args);
       }, // end bW.addClass
 
       removeClass : function () {
         var args = parseArray(arguments);
 
-        return this.all(subtractClass, args);
+        return this.all(minusClass, args);
       }, // end bW.removeClass
 
       listenFor : function (evt, func, capt, aargs) {
@@ -610,15 +610,7 @@
               data_attr;
 
           for (i = 0; i < rf.length; i += 1) {
-            if (rf[i].dataset) { rf[i].dataset.required = true; }
-            else if (rf[i].setAttribute) {
-              rf[i].setAttribute('data-required', true);
-            }
-            else if (rf[i].attributes.setNamedItem) {
-              data_attr = document.createAttribute('data-required');
-              data_attr.nodeValue = true;
-              rf[i].attributes.setNamedItem(data_attr);
-            }
+            plusClass(rf[i], 'bW-required-field');
           }
 
           return instance;
