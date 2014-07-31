@@ -300,6 +300,7 @@
 
       for (i = 0; i < len; i += 1) {
         instance[i] = elements[i];
+        instance[i].ndx = i;
         instance[i].bWid = generateId();
         instance.length = (i + 1);
       }
@@ -343,10 +344,6 @@
         }
 
         for (i = 0; i < this.length; i += 1) {
-          if (func.fid && /listenFor|stopListening/.test(func.fid)) {
-            args_array.unshift(i);
-            remove = 2;
-          }
           args_array.unshift(this[i]);
           func.apply(this, args_array);
           args_array.splice(0, remove);
@@ -384,7 +381,7 @@
 
       listenFor : function (evt, func, capt, aargs) {
 
-        function listen (elem, ndx, evt, func, capt, aargs) {
+        function listen (elem, evt, func, capt, aargs) {
           var instance = this;
 
           function add () {
@@ -412,8 +409,8 @@
             var rx = /function ([a-zA-Z-_]*)\(/;
 
             // ### more valuable for the key to be a unique ID or the event type string?
-            instance.event_registry[ndx] = {};
-            instance.event_registry[ndx][evt] = {
+            instance.event_registry[elem.ndx] = {};
+            instance.event_registry[elem.ndx][evt] = {
               elem : elem,
               evt : evt,
               func : func,
@@ -426,7 +423,6 @@
           add();
           register();
         } // end listen
-        listen.fid = 'listenFor';
 
         return this.all(listen, arguments);
       }, // end bW.listenFor
@@ -434,7 +430,7 @@
       stopListening : function (evt, func) {
         var instance = this;
 
-        function dontListen (elem, ndx, evt, func, capt) {
+        function dontListen (elem, evt, func, capt) {
 
           function remove () {
             if (elem.removeEventListener) {
@@ -455,14 +451,14 @@
                 key;
 
             if (instance.event_registry.length > 0) {
-              delete instance.event_registry[ndx][evt];
-              for (key in instance.event_registry[ndx]) {
+              delete instance.event_registry[elem.ndx][evt];
+              for (key in instance.event_registry[elem.ndx]) {
                 count += 1
               }
               instance.event_registry.length = count;
 
               if (count === 0) {
-                delete instance.event_registry[ndx];
+                delete instance.event_registry[elem.ndx];
               }
             }
           } // end unregister
@@ -470,7 +466,6 @@
           remove();
           unregister();
         } // end dontListen
-        dontListen.fid = 'stopListening';
 
         return instance.all(dontListen, arguments);
       }, // end bW.stopListening
@@ -548,6 +543,31 @@
         }
 
         return this.all(removeElement, arguments);
+      }, // end bW.remove
+
+      not : function (slctr) {
+        var instance = this,
+            comparison_set = selectElements(slctr);
+
+        function recalculate () {
+        }
+
+        function compare (elem) {
+          var i,
+              comparator = arguments[0];
+
+          console.log(comparator);
+
+          for (i = 1; i < arguments.length; i += 1) {
+            if (comparator === arguments[i]) {
+              console.log('Wunderbar.');
+              console.log(comparator.ndx);
+              console.log(arguments[i]);
+            }
+          }
+        }
+
+        return this.all(compare, comparison_set);
       }, // end bW.remove
 
       setForm : function (submit_selector, suffix) {

@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*8/1/14*
+
+1. The Bigwheel constructor stores each element reference's index in its own `ndx` property.
+
+
 *7/30/14*
 
 1. `bW.remove` detaches all matched elements from the DOM.
