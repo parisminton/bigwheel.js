@@ -577,11 +577,11 @@
           if (class_suffix) {
             fclass = 'bW-form-' + class_suffix;
             if (!/fclass/.test(form.className)) {
-              form.className = fclass;
+              plusClass(form, fclass);
             }
             fclass = 'bW-submit-' + class_suffix;
             if (!/fclass/.test(submit.className)) {
-              submit.className = fclass;
+              plusClass(submit, fclass);
             }
           }
         }
