@@ -552,7 +552,7 @@
       not : function (slctr) {
         var comparison_set = selectElements(slctr);
 
-        function recount (inst) {
+        function reindex (inst) {
           var remainders = [],
               i;
 
@@ -565,9 +565,10 @@
 
           for (i = 0; i < remainders.length; i += 1) {
             inst[i] = remainders[i];
+            inst[i].ndx = i;
           }
           inst.length = remainders.length;
-        }
+        } // end reindex
 
         function compare (elem) {
           var i,
@@ -579,9 +580,9 @@
               break;
             }
           }
-        }
+        } // end compare
         this.all(compare, comparison_set);
-        recount(this);
+        reindex(this);
         return this;
       }, // end bW.remove
 
