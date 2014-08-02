@@ -643,6 +643,18 @@
 
       f = BigwheelForm.prototype;
 
+      f.collectFields = function () {
+        var i,
+            name;
+
+        for (i = 0; i < instance.fields.length; i += 1) {
+          name = instance.fields[i].name;
+          instance.data[name] = instance.fields[i].value;
+        }
+
+        console.log(instance);
+      } // end BigwheelForm.collectFields
+
       f.setRequiredFields = function (slctr) {
         var instance = this,
             i,
@@ -725,17 +737,19 @@
 
       f.submitHandler = function (evt) {
         evt.preventDefault();
-        f.event_obj = evt;
-        f.collectFields();
+        instance.collectFields();
+        /*
         if (f.readyToSubmitForm()) {
           f.sendData();
         }
         else {
           f.showErrorToast();
         }
+        */
       }
       // ### end BigwheelForm prototype ###
 
+      bW(this.submit_button).listenFor('click', this.submitHandler, true);
     } // end BigwheelForm constructor
 
     return new Bigwheel(selectElements(selector));

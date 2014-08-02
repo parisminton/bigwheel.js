@@ -4,6 +4,13 @@ bigwheel.js
 Changelog
 ---------
 
+*8/2/14*
+
+1. Forms store all their fields at instantiation.
+
+2. collectFields saves all field values to the instance's `data` property.
+
+
 *7/31/14*
 
 1. The Bigwheel constructor stores each element reference's index in its own `ndx` property.
