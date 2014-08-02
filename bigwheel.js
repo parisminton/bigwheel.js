@@ -584,7 +584,7 @@
         this.all(compare, comparison_set);
         reindex(this);
         return this;
-      }, // end bW.remove
+      }, // end bW.not
 
       setForm : function (submit_selector, suffix) {
         var form = this[0],
@@ -631,11 +631,20 @@
 
         f.collectFields = function () {
           var instance = this,
-              fields;
+              fields = selectElements('input'),
+              required_fields = [],
+              i;
 
-          // grab all inputs and textareas, minus the submit button
+          for (i = 0; i < fields.length; i += 1) {
+            // exclude the submit button
+            if (fields[i] === instance.submit_button) {
+              fields.splice(i, 1);
+            }
+            if (/required/.test(fields[i].className)) {
+              required_fields.push(fields[i]);
+            }
+          }
 
-          f.fields = fields;
           return instance;
         } // end BigwheelForm.collectFields
 
@@ -664,6 +673,8 @@
 
         f.init = function () {
           var instance = this;
+
+          f.collectFields();
         } // end BigwheelForm.init
 
         f.readyToSubmitForm = function () {
@@ -731,6 +742,8 @@
           }
         }
         // ### end BigwheelForm prototype ###
+
+        f.init();
 
         bW.forms.push(form_obj = new BigwheelForm(form, submit, suffix));
         return form_obj;
