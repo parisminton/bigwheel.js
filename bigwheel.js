@@ -589,10 +589,7 @@
       setForm : function (submit_selector, suffix) {
         var form = this[0],
             submit,
-            form_obj,
-            prop,
-            form_proto = {},
-            f;
+            form_obj;
 
         if (!submit_selector) {
           throw new Error('bW.setForm should be invoked with a selector for a submit button.');
@@ -601,155 +598,145 @@
           submit = selectElements(submit_selector)[0];
         }
 
-        function BigwheelForm (form_element, submit_button, class_suffix) {
-          var instance = this,
-              fclass;
-
-          instance[0] = form_element;
-          instance.submit_button = submit_button;
-          instance.length = 1;
-          instance.data = {};
-
-          if (class_suffix) {
-            fclass = 'bW-form-' + class_suffix;
-            if (!/fclass/.test(form.className)) {
-              plusClass(form, fclass);
-            }
-            fclass = 'bW-submit-' + class_suffix;
-            if (!/fclass/.test(submit.className)) {
-              plusClass(submit, fclass);
-            }
-          }
-        }
-
-        // ### BigwheelForm prototype needs all the Bigwheel.prototype methods ###
-        for (prop in Bigwheel.prototype) {
-          form_proto[prop] = Bigwheel.prototype[prop];
-        }
-
-        f = BigwheelForm.prototype = form_proto;
-
-        f.collectFields = function () {
-          var instance = this,
-              fields = selectElements('input'),
-              required_fields = [],
-              i;
-
-          for (i = 0; i < fields.length; i += 1) {
-            // exclude the submit button
-            if (fields[i] === instance.submit_button) {
-              fields.splice(i, 1);
-            }
-            if (/required/.test(fields[i].className)) {
-              required_fields.push(fields[i]);
-            }
-          }
-
-          return instance;
-        } // end BigwheelForm.collectFields
-
-        f.setRequiredFields = function (slctr) {
-          var instance = this,
-              i,
-              rf = selectElements(slctr),
-              data_attr;
-
-          for (i = 0; i < rf.length; i += 1) {
-            plusClass(rf[i], 'bW-required-field');
-          }
-
-          return instance;
-        } // end BigwheelForm.setRequiredFields
-
-        f.addToTests = function (test) {
-          f.tests = f.tests || [];
-          f.tests.push(test);
-        } // end BigwheelForm.addToTests
-
-        f.lawyer = function () {
-          console.log('Don\'t let my wife marry a lawyer.');
-          return this;
-        }
-
-        f.init = function () {
-          var instance = this;
-
-          f.collectFields();
-        } // end BigwheelForm.init
-
-        f.readyToSubmitForm = function () {
-          var ready_to_submit = true,
-              tests = [
-                f.areFieldsEmpty,
-                f.outsideSubmissionLimit,
-                f.outsideTextLimit
-              ],
-              i;
-
-          f.unBruiseFields();
-
-          bW('.validation-error-message').remove();
-          if (arguments.length > 0) {
-            for (i = 0; i < arguments.length; i+= 0) {
-              tests.push(arguments [i]);
-            }
-          }
-
-          for (i = 0; i < tests.length; i += 1) {
-            // each test is for an error, so if one returns true, something\'s wrong
-            if (tests[i](f.fields, f.event_obj.target)) {
-              ready_to_submit = false;
-              // bW('.submitphoto').removeClass('ready');
-            }
-          }
-          // bW('.submitphoto').addClass('ready');
-          return ready_to_submit;
-        } // end readyToSubmitForm
-
-        f.sendData = function () {
-          f.collectValuesAsJSON();
-          f.collectImagesAsJSON();
-          f.collectLocationDescriptionsAsJSON();
-
-          ajaxOpts = {
-            type: 'POST',
-            url: url_goes_here,
-            data: f.JSONData,
-            success: function (data) {
-              f.showThanks();
-            },
-            error: function (e, status, error_thrown) {
-              console.log('Form at ' + document.location.href + ' failed to submit with the error: "' + e.status + ' ' + error_thrown + '".');
-              f.addErrorMessage('There was a problem processing your submission. Please try again.');
-              form.find('.field').first().addClass('validation-warning');
-              f.showErrorToast();
-              form.find('.field').first().removeClass('validation-warning');
-            }
-          }
-
-          bW.ajax(ajaxOpts);
-        } // end BigwheelForm.sendData
-
-        f.submitHandler = function (evt) {
-          evt.preventDefault();
-          f.event_obj = evt;
-          f.collectFields();
-          if (f.readyToSubmitForm()) {
-            f.sendData();
-          }
-          else {
-            f.showErrorToast();
-          }
-        }
-        // ### end BigwheelForm prototype ###
-
-        f.init();
-
-        bW.forms.push(form_obj = new BigwheelForm(form, submit, suffix));
+        form_obj = new BigwheelForm(form, submit, suffix);
+        form_obj.init();
         return form_obj;
       } // end bW.setForm
 
     } // end Bigwheel prototype
+
+    function BigwheelForm (form_element, submit_button, class_suffix) {
+      var instance = this,
+          fclass,
+          prop,
+          i;
+
+      instance[0] = form_element;
+      instance.submit_button = submit_button;
+      instance.length = 1;
+      instance.data = {};
+      instance.fields = selectElements('input');
+      instance.required_fields = [];
+
+      if (class_suffix) {
+        fclass = 'bW-form-' + class_suffix;
+        if (!/fclass/.test(instance[0].className)) {
+          plusClass(instance[0], fclass);
+        }
+        fclass = 'bW-submit-' + class_suffix;
+        if (!/fclass/.test(instance.submit_button.className)) {
+          plusClass(instance.submit_button, fclass);
+        }
+      }
+      
+      for (i = 0; i < instance.fields.length; i += 1) {
+        // exclude the submit button
+        if (instance.fields[i] === instance.submit_button) {
+          instance.fields.splice(i, 1);
+        }
+      }
+      
+      // ### BigwheelForm prototype needs all the Bigwheel.prototype methods ###
+      for (var prop in Bigwheel.prototype) {
+        BigwheelForm.prototype[prop] = Bigwheel.prototype[prop];
+      }
+
+      f = BigwheelForm.prototype;
+
+      f.setRequiredFields = function (slctr) {
+        var instance = this,
+            i,
+            rf = selectElements(slctr);
+
+        for (i = 0; i < rf.length; i += 1) {
+          instance.required_fields.push(rf[i]);
+          plusClass(rf[i], 'bW-required-field');
+        }
+
+        return instance;
+      } // end BigwheelForm.setRequiredFields
+
+      f.addToTests = function (test) {
+        f.tests = f.tests || [];
+        f.tests.push(test);
+      } // end BigwheelForm.addToTests
+
+      f.lawyer = function () {
+        console.log('Don\'t let my wife marry a lawyer.');
+        return this;
+      }
+
+      f.init = function () {
+        var instance = this;
+      } // end BigwheelForm.init
+
+      f.readyToSubmitForm = function () {
+        var ready_to_submit = true,
+            tests = [
+              f.areFieldsEmpty,
+              f.outsideSubmissionLimit,
+              f.outsideTextLimit
+            ],
+            i;
+
+        f.unBruiseFields();
+
+        bW('.validation-error-message').remove();
+        if (arguments.length > 0) {
+          for (i = 0; i < arguments.length; i+= 0) {
+            tests.push(arguments [i]);
+          }
+        }
+
+        for (i = 0; i < tests.length; i += 1) {
+          // each test is for an error, so if one returns true, something\'s wrong
+          if (tests[i](f.fields, f.event_obj.target)) {
+            ready_to_submit = false;
+            // bW('.submitphoto').removeClass('ready');
+          }
+        }
+        // bW('.submitphoto').addClass('ready');
+        return ready_to_submit;
+      } // end readyToSubmitForm
+
+      f.sendData = function () {
+        f.collectValuesAsJSON();
+        f.collectImagesAsJSON();
+        f.collectLocationDescriptionsAsJSON();
+
+        ajaxOpts = {
+          type: 'POST',
+          url: url_goes_here,
+          data: f.JSONData,
+          success: function (data) {
+            f.showThanks();
+          },
+          error: function (e, status, error_thrown) {
+            console.log('Form at ' + document.location.href + ' failed to submit with the error: "' + e.status + ' ' + error_thrown + '".');
+            f.addErrorMessage('There was a problem processing your submission. Please try again.');
+            form.find('.field').first().addClass('validation-warning');
+            f.showErrorToast();
+            form.find('.field').first().removeClass('validation-warning');
+          }
+        }
+
+        bW.ajax(ajaxOpts);
+      } // end BigwheelForm.sendData
+
+      f.submitHandler = function (evt) {
+        evt.preventDefault();
+        f.event_obj = evt;
+        f.collectFields();
+        if (f.readyToSubmitForm()) {
+          f.sendData();
+        }
+        else {
+          f.showErrorToast();
+        }
+      }
+      // ### end BigwheelForm prototype ###
+
+    } // end BigwheelForm constructor
 
     return new Bigwheel(selectElements(selector));
 
