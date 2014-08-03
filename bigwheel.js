@@ -608,15 +608,16 @@
     function BigwheelForm (form_element, submit_button, class_suffix) {
       var instance = this,
           fclass,
+          fields = selectElements('input, textarea, select'),
           prop,
           i;
 
-      instance[0] = form_element;
-      instance.submit_button = submit_button;
+      instance[0] = instance.form = form_element;
+      instance.submit = submit_button;
       instance.length = 1;
-      instance.data = {};
-      instance.fields = selectElements('input');
+      instance.fields = {};
       instance.required_fields = [];
+      instance.data = {};
 
       if (class_suffix) {
         fclass = 'bW-form-' + class_suffix;
@@ -624,15 +625,18 @@
           plusClass(instance[0], fclass);
         }
         fclass = 'bW-submit-' + class_suffix;
-        if (!/fclass/.test(instance.submit_button.className)) {
-          plusClass(instance.submit_button, fclass);
+        if (!/fclass/.test(instance.submit.className)) {
+          plusClass(instance.submit, fclass);
         }
       }
       
-      for (i = 0; i < instance.fields.length; i += 1) {
+      for (i = 0; i < fields.length; i += 1) {
         // exclude the submit button
-        if (instance.fields[i] === instance.submit_button) {
-          instance.fields.splice(i, 1);
+        if (fields[i] === instance.submit) {
+          fields.splice(i, 1);
+        }
+        else {
+          instance.fields[fields[i].name] = fields[i];
         }
       }
       
@@ -643,21 +647,8 @@
 
       f = BigwheelForm.prototype;
 
-      f.collectFields = function () {
-        var i,
-            name;
-
-        for (i = 0; i < instance.fields.length; i += 1) {
-          name = instance.fields[i].name;
-          instance.data[name] = instance.fields[i].value;
-        }
-
-        console.log(instance);
-      } // end BigwheelForm.collectFields
-
       f.setRequiredFields = function (slctr) {
-        var instance = this,
-            i,
+        var i,
             rf = selectElements(slctr);
 
         for (i = 0; i < rf.length; i += 1) {
@@ -666,21 +657,28 @@
         }
 
         return instance;
-      } // end BigwheelForm.setRequiredFields
+      } // end bWF.setRequiredFields
+
+      f.collectValues = function () {
+        var name;
+
+        for (name in instance.fields) {
+          instance.data[name] = instance.fields[name].value;
+        }
+      } // end bWF.collectValues
+
+      f.val = function () {
+
+      } // end bWF.val
 
       f.addToTests = function (test) {
         f.tests = f.tests || [];
         f.tests.push(test);
-      } // end BigwheelForm.addToTests
-
-      f.lawyer = function () {
-        console.log('Don\'t let my wife marry a lawyer.');
-        return this;
-      }
+      } // end bWF.addToTests
 
       f.init = function () {
         var instance = this;
-      } // end BigwheelForm.init
+      } // end bWF.init
 
       f.readyToSubmitForm = function () {
         var ready_to_submit = true,
@@ -733,11 +731,11 @@
         }
 
         bW.ajax(ajaxOpts);
-      } // end BigwheelForm.sendData
+      } // end bWF.sendData
 
       f.submitHandler = function (evt) {
         evt.preventDefault();
-        instance.collectFields();
+        instance.collectValues();
         /*
         if (f.readyToSubmitForm()) {
           f.sendData();
@@ -749,7 +747,7 @@
       }
       // ### end BigwheelForm prototype ###
 
-      bW(this.submit_button).listenFor('click', this.submitHandler, true);
+      bW(instance.submit).listenFor('click', instance.submitHandler, true);
     } // end BigwheelForm constructor
 
     return new Bigwheel(selectElements(selector));

@@ -4,9 +4,14 @@ bigwheel.js
 Changelog
 ---------
 
+*8/3/14*
+
+1. Store fields as an object, not an array, to access fields directly by name.
+
+
 *8/2/14*
 
-1. Forms store all their fields at instantiation.
+1. Forms store references to all their fields at instantiation.
 
 2. collectFields saves all field values to the instance's `data` property.
 
