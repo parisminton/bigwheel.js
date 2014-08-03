@@ -10,6 +10,8 @@ Changelog
 
 2. `bWF.val` returns field values.
 
+3. `bWF.areFieldsEmpty` validates required fields. `bWF.bruiseField` identifies invalid fields.
+
 
 *8/2/14*
 

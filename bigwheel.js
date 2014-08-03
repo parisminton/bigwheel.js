@@ -680,6 +680,29 @@
         var instance = this;
       } // end bWF.init
 
+      f.bruiseField = function (field) {
+        if (/TEXTAREA|SELECT/.test(field.nodeName)
+          || /text|fieldset/.test(field.type)) {
+          plusClass(field, 'bW-invalid-field');
+        }
+      } // end bruiseField
+
+      f.areFieldsEmpty = function () {
+        var i,
+            empty = false;
+
+        for (i = 0; i < instance.required_fields.length; i += 1) {
+          if (instance.required_fields[i].value === '') {
+            instance.bruiseField(instance.required_fields[i]);
+            empty = true;
+          }
+        }
+        if (empty) {
+          // prepare error message
+        }
+        return empty;
+      }
+
       f.readyToSubmitForm = function () {
         var ready_to_submit = true,
             tests = [
@@ -691,7 +714,7 @@
 
         f.unBruiseFields();
 
-        bW('.validation-error-message').remove();
+        bW('.bW-validation-error-message').remove();
         if (arguments.length > 0) {
           for (i = 0; i < arguments.length; i+= 0) {
             tests.push(arguments [i]);
@@ -724,9 +747,9 @@
           error: function (e, status, error_thrown) {
             console.log('Form at ' + document.location.href + ' failed to submit with the error: "' + e.status + ' ' + error_thrown + '".');
             f.addErrorMessage('There was a problem processing your submission. Please try again.');
-            form.find('.field').first().addClass('validation-warning');
+            form.find('.field').first().addClass('bW-invalid-field');
             f.showErrorToast();
-            form.find('.field').first().removeClass('validation-warning');
+            form.find('.field').first().removeClass('bW-invalid-field');
           }
         }
 
@@ -736,6 +759,7 @@
       f.submitHandler = function (evt) {
         evt.preventDefault();
         instance.collectValues();
+        instance.areFieldsEmpty();
         /*
         if (f.readyToSubmitForm()) {
           f.sendData();
