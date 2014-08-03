@@ -8,12 +8,14 @@ Changelog
 
 1. Store fields as an object, not an array, to access fields directly by name.
 
+2. `bWF.val` returns field values.
+
 
 *8/2/14*
 
 1. Forms store references to all their fields at instantiation.
 
-2. collectFields saves all field values to the instance's `data` property.
+2. `collectFields` saves all field values to the instance's `data` property.
 
 
 *7/31/14*

@@ -667,8 +667,8 @@
         }
       } // end bWF.collectValues
 
-      f.val = function () {
-
+      f.val = function (name) {
+        if (instance.fields[name]) { return instance.fields[name].value; }
       } // end bWF.val
 
       f.addToTests = function (test) {
