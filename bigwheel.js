@@ -1,5 +1,5 @@
 /* 
- * > bigwheel.js 0.3.0 <
+ * > bigwheel.js 0.4.0 <
  *
  * My go-to JavaScript functions.
  * 
@@ -105,6 +105,61 @@
               filtered = [],
               i;
           
+          function selectWithAttributes (s) {
+            var attr_rx = /([a-zA-Z0-9_\-#\.]+)\[([a-zA-Z0-9_\-]+)([\^\$\*\~\!\|]?=)["']([a-zA-Z0-9\.\:\?\#\/]+)["']\]|\[([a-zA-Z0-9_\-]+)([\^\$\*\~\!\|]?=)["']([a-zA-Z0-9\.\:\?\#\/]+)["']\]|([a-zA-Z0-9_\-#\.]+)\[([a-zA-Z0-9_\-]+)\]|\[([a-zA-Z0-9_\-]+)\]/,
+                tokens_rx = /\^=|\*=|\~=|\|=|\$=|\!=|=/,
+                attr_array = attr_rx.exec(s),
+                scope,
+                attr,
+                token,
+                value;
+
+            function reduce (results_array) {
+              var reduced_results = [],
+                  i;
+              
+              for (i = 0; i < results_array.length; i += 1) {
+                if (results_array[i] != undefined ) {
+                  reduced_results.push(results_array[i]);
+                }
+              }
+              return reduced_results;
+            }
+
+            attr_array = reduce(attr_array);
+
+            if (attr_array.length === 2) {
+              scope = attr_array[0];
+            }
+
+            if (attr_array.length === 3) {
+              scope = attr_array[1];
+              attr = attr_array[2];
+            }
+
+            if (attr_array.length === 4) {
+              attr = attr_array[1];
+              token = attr_array[2];
+              value = attr_array[3];
+            }
+
+            if (attr_array.length === 5) {
+              scope = attr_array[1];
+              attr = attr_array[2];
+              token = attr_array[3];
+              value = attr_array[4];
+            }
+
+          } // end selectWithAttributes
+
+          // handle attribute selector
+          if (/\[[a-zA-Z0-9_\-=\^\$\*\~\!\|"'\.\:\?\#\/]+\]/.test(s)) {
+            // selectWithAttributes
+          }
+          else {
+            // normal stuff; selectWithoutAttributes
+          }
+
           // remove any empty strings Array.split might have added
           for (i = 0; i < flags.length; i += 1) {
             if (flags[i].length) {
@@ -617,7 +672,50 @@
       instance.length = 1;
       instance.fields = {};
       instance.required_fields = [];
+      instance.collectors = {};
       instance.data = {};
+
+      // ### bWF HELPERS  ###
+      function bruiseField (field) {
+        if (/TEXTAREA|SELECT/.test(field.nodeName)
+          || /text|fieldset/.test(field.type)) {
+          plusClass(field, 'bW-invalid-field');
+        }
+      } // end bruiseField
+
+      function areFieldsEmpty () {
+        var i,
+            empty = false;
+
+        for (i = 0; i < instance.required_fields.length; i += 1) {
+          if (instance.required_fields[i].value === '') {
+            bruiseField(instance.required_fields[i]);
+            empty = true;
+          }
+        }
+        if (empty) {
+          // prepare error message
+        }
+        return empty;
+      } // end areFieldsEmpty
+
+      function collectValues () {
+        var name;
+
+        for (name in instance.fields) {
+          instance.data[name] = instance.fields[name].value;
+        }
+      } // end collectValues
+
+      function collect (name, callback) {
+        var rx = /^function ([a-zA-Z_]*)\(.*\)/;
+
+        if (typeof arguments[0] != 'string') {
+          throw new Error('The first argument to BigwheelForm.collect should be a string-- the name of the collector function');
+        }
+
+        instance.collectors[name] = callback;
+      } // end collect
 
       if (class_suffix) {
         fclass = 'bW-form-' + class_suffix;
@@ -659,14 +757,6 @@
         return instance;
       } // end bWF.setRequiredFields
 
-      f.collectValues = function () {
-        var name;
-
-        for (name in instance.fields) {
-          instance.data[name] = instance.fields[name].value;
-        }
-      } // end bWF.collectValues
-
       f.val = function (name) {
         if (instance.fields[name]) { return instance.fields[name].value; }
       } // end bWF.val
@@ -679,29 +769,6 @@
       f.init = function () {
         var instance = this;
       } // end bWF.init
-
-      f.bruiseField = function (field) {
-        if (/TEXTAREA|SELECT/.test(field.nodeName)
-          || /text|fieldset/.test(field.type)) {
-          plusClass(field, 'bW-invalid-field');
-        }
-      } // end bruiseField
-
-      f.areFieldsEmpty = function () {
-        var i,
-            empty = false;
-
-        for (i = 0; i < instance.required_fields.length; i += 1) {
-          if (instance.required_fields[i].value === '') {
-            instance.bruiseField(instance.required_fields[i]);
-            empty = true;
-          }
-        }
-        if (empty) {
-          // prepare error message
-        }
-        return empty;
-      }
 
       f.readyToSubmitForm = function () {
         var ready_to_submit = true,
@@ -758,8 +825,8 @@
 
       f.submitHandler = function (evt) {
         evt.preventDefault();
-        instance.collectValues();
-        instance.areFieldsEmpty();
+        collectValues();
+        areFieldsEmpty();
         /*
         if (f.readyToSubmitForm()) {
           f.sendData();
