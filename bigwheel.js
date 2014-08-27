@@ -129,7 +129,7 @@
             attr_array = reduce(attr_array);
 
             if (attr_array.length === 2) {
-              scope = attr_array[0];
+              attr = attr_array[1];
             }
 
             if (attr_array.length === 3) {
