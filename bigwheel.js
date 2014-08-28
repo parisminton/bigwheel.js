@@ -15,7 +15,8 @@
 
     // ### bW selector engine and constructor ###
     function selectElements (selectr, scope) {
-      var getter;
+      var getter,
+          attribute_mode = false;
 
       scope = scope || document;
 
@@ -100,8 +101,8 @@
             j;
 
         function select (s) {
-          var tokens = s.match(/[a-zA-Z0-9_-]\.[a-zA-Z0-9_-]|\s+\.|^\.|[a-zA-Z0-9_-]#[a-zA-Z0-9_-]|\s+#|^#|\s+|\./g) || [],
-              flags = s.split(/\s+|\.|#/g) || [],
+          var tokens = s.match(/[a-zA-Z0-9_-]\.[a-zA-Z0-9_-]|\s+\.|^\.|[a-zA-Z0-9_-]#[a-zA-Z0-9_-]|\s+#|^#|\s+|\.|[a-zA-Z0-9_-]\[[a-zA-Z0-9_-]|\s+\[|^\[|[\|\*\^\$\~\!]?=["']|["']\]/g) || [],
+              flags = s.split(/\s+|\.|#|\[|[\|\*\^\$\~\!]?=["']|["']?\]/g) || [],
               filtered = [],
               i;
           
@@ -128,28 +129,32 @@
 
             attr_array = reduce(attr_array);
 
+            // '[attribute]'
             if (attr_array.length === 2) {
               attr = attr_array[1];
             }
 
+            // 'element[attribute]'
             if (attr_array.length === 3) {
               scope = attr_array[1];
               attr = attr_array[2];
             }
 
+            // '[attribute*="value"]'
             if (attr_array.length === 4) {
               attr = attr_array[1];
               token = attr_array[2];
               value = attr_array[3];
             }
 
+            // 'element[attribute*="value"]'
             if (attr_array.length === 5) {
               scope = attr_array[1];
               attr = attr_array[2];
               token = attr_array[3];
               value = attr_array[4];
             }
-
+            
           } // end selectWithAttributes
 
           // handle attribute selector
@@ -192,6 +197,11 @@
             }
 
             if (/[a-zA-Z0-9_-]#[a-zA-Z0-9_-]/.test(tokens[i])) {
+              getter = 'id';
+            }
+
+            if (/\[/.test(tokens[i])) {
+              attribute_mode = true;
               getter = 'id';
             }
 
