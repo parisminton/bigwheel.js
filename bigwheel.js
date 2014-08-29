@@ -101,7 +101,7 @@
             j;
 
         function select (s) {
-          var tokens = s.match(/[a-zA-Z0-9_-]\.[a-zA-Z0-9_-]|\s+\.|^\.|[a-zA-Z0-9_-]#[a-zA-Z0-9_-]|\s+#|^#|\s+|\.|[a-zA-Z0-9_-]\[[a-zA-Z0-9_-]|\s+\[|^\[|[\|\*\^\$\~\!]?=["']|["']\]/g) || [],
+          var tokens = s.match(/[a-zA-Z0-9_-]\.[a-zA-Z0-9_-]|\s+\.|^\.|[a-zA-Z0-9_-]#[a-zA-Z0-9_-]|\s+#|^#|\s+|\.|[a-zA-Z0-9_-]\[[a-zA-Z0-9_-]|\s+\[|^\[|[\|\*\^\$\~\!]?=["']|["']?\]/g) || [],
               flags = s.split(/\s+|\.|#|\[|[\|\*\^\$\~\!]?=["']|["']?\]/g) || [],
               filtered = [],
               i;
@@ -154,7 +154,7 @@
               token = attr_array[3];
               value = attr_array[4];
             }
-            
+
           } // end selectWithAttributes
 
           // handle attribute selector
