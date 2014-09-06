@@ -20,7 +20,7 @@
 
       scope = scope || document;
 
-      function filterHTMLCollection (list, getter, filter) {
+      function filterHTMLCollection (list, getter, filter, attr) {
         var i,
             len = list.length,
             nodes,
@@ -68,6 +68,52 @@
           }
         } // end drillDown
 
+        function testAttribute (list) {
+          var i,
+              len;
+
+          function attributeHelper (f) {
+            var i,
+                dall = document.all,
+                dlen = dall.length,
+                nodes = [];
+
+            for (i = 0; i < dlen; i += 1) {
+              if (dall[i].hasAttribute(f)) {
+                nodes.push(dall[i]);
+              }
+            }
+
+            list = nodes;
+          } // end attributeHelper
+
+          if (list[0] === document && len === 1) {
+            attributeHelper(filter);
+          }
+
+          len = list.length;
+
+          for (i = 0; i < len; i += 1) {
+            if (list[i][getter]) {
+              if (list[i][getter](filter)) {
+                filtered_nodes.push(list[i]);
+              }
+            }
+          }
+        } // end testAttribute
+
+        function matchAttribute (list) {
+          var i,
+              len = list.length,
+              attr_rx = new RegExp(filter);
+
+          for (i = 0; i < len; i += 1) {
+            if (attr_rx.test(list[i].getAttribute(attr))) {
+              filtered_nodes.push(list[i]);
+            }
+          }
+        } // end matchAttribute
+
         function matchSpecifier (list) {
           var i,
               len = list.length,
@@ -86,6 +132,12 @@
         if (/className|id/.test(getter)) {
           matchSpecifier(list);
         }
+        else if (/hasAttribute/.test(getter)) {
+          testAttribute(list);
+        }
+        else if (/matchAttribute/.test(getter)) {
+          matchAttribute(list);
+        }
         else {
           drillDown(list);
         }
@@ -101,8 +153,9 @@
             j;
 
         function select (s) {
-          var tokens = s.match(/[a-zA-Z0-9_-]\.[a-zA-Z0-9_-]|\s+\.|^\.|[a-zA-Z0-9_-]#[a-zA-Z0-9_-]|\s+#|^#|\s+|\.|[a-zA-Z0-9_-]\[[a-zA-Z0-9_-]|\s+\[|^\[|[\|\*\^\$\~\!]?=["']|["']?\]/g) || [],
+          var tokens = s.match(/[a-zA-Z0-9_-]\.[a-zA-Z0-9_-]|\s+\.|^\.|[a-zA-Z0-9_-]#[a-zA-Z0-9_-]|\s+#|^#|\s+|\.|[a-zA-Z0-9_-]\[[a-zA-Z0-9_-]|\s+\[|^\[|[\|\*\^\$\~\!]?=["']/g) || [],
               flags = s.split(/\s+|\.|#|\[|[\|\*\^\$\~\!]?=["']|["']?\]/g) || [],
+              attr,
               filtered = [],
               i;
           
@@ -202,7 +255,12 @@
 
             if (/\[/.test(tokens[i])) {
               attribute_mode = true;
-              getter = 'id';
+              attr = flags[i];
+              getter = 'hasAttribute';
+            }
+            
+            if (/[\|\*\^\$\~\!]?=/.test(tokens[i])) {
+              getter = 'matchAttribute';
             }
 
             // put singular DOM references, but not HTMLCollections, in an array
@@ -210,7 +268,7 @@
             if (typeof scope.length === 'undefined') {
               scope = [scope];
             }
-            filterHTMLCollection(scope, getter, flags[i]);
+            filterHTMLCollection(scope, getter, flags[i], attr);
 
           } // end tokens/flags loop
 
