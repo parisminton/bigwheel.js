@@ -1,5 +1,5 @@
 /* 
- * > bigwheel.js 0.4.0 <
+ * > bigwheel.js 0.5.0 <
  *
  * My go-to JavaScript functions.
  * 
@@ -15,8 +15,7 @@
 
     // ### bW selector engine and constructor ###
     function selectElements (selectr, scope) {
-      var getter,
-          attribute_mode = false;
+      var getter;
 
       scope = scope || document;
 
@@ -70,25 +69,26 @@
 
         function testAttribute (list) {
           var i,
-              len;
+              len = list.length;
 
-          function attributeHelper (f) {
+          // an inefficient last resort for when the attribute selector is not scoped
+          function scanAllAttributes (f) {
             var i,
-                dall = document.all,
-                dlen = dall.length,
+                everything = document.getElementsByTagName('*'),
+                elen = everything.length,
                 nodes = [];
 
-            for (i = 0; i < dlen; i += 1) {
-              if (dall[i].hasAttribute(f)) {
-                nodes.push(dall[i]);
+            for (i = 0; i < elen; i += 1) {
+              if (everything[i].hasAttribute(f)) {
+                nodes.push(everything[i]);
               }
             }
 
             list = nodes;
-          } // end attributeHelper
+          } // end scanAllAttributes
 
           if (list[0] === document && len === 1) {
-            attributeHelper(filter);
+            scanAllAttributes(filter);
           }
 
           len = list.length;
@@ -159,65 +159,6 @@
               filtered = [],
               i;
           
-          function selectWithAttributes (s) {
-            var attr_rx = /([a-zA-Z0-9_\-#\.]+)\[([a-zA-Z0-9_\-]+)([\^\$\*\~\!\|]?=)["']([a-zA-Z0-9\.\:\?\#\/]+)["']\]|\[([a-zA-Z0-9_\-]+)([\^\$\*\~\!\|]?=)["']([a-zA-Z0-9\.\:\?\#\/]+)["']\]|([a-zA-Z0-9_\-#\.]+)\[([a-zA-Z0-9_\-]+)\]|\[([a-zA-Z0-9_\-]+)\]/,
-                tokens_rx = /\^=|\*=|\~=|\|=|\$=|\!=|=/,
-                attr_array = attr_rx.exec(s),
-                scope,
-                attr,
-                token,
-                value;
-
-            function reduce (results_array) {
-              var reduced_results = [],
-                  i;
-              
-              for (i = 0; i < results_array.length; i += 1) {
-                if (results_array[i] != undefined ) {
-                  reduced_results.push(results_array[i]);
-                }
-              }
-              return reduced_results;
-            }
-
-            attr_array = reduce(attr_array);
-
-            // '[attribute]'
-            if (attr_array.length === 2) {
-              attr = attr_array[1];
-            }
-
-            // 'element[attribute]'
-            if (attr_array.length === 3) {
-              scope = attr_array[1];
-              attr = attr_array[2];
-            }
-
-            // '[attribute*="value"]'
-            if (attr_array.length === 4) {
-              attr = attr_array[1];
-              token = attr_array[2];
-              value = attr_array[3];
-            }
-
-            // 'element[attribute*="value"]'
-            if (attr_array.length === 5) {
-              scope = attr_array[1];
-              attr = attr_array[2];
-              token = attr_array[3];
-              value = attr_array[4];
-            }
-
-          } // end selectWithAttributes
-
-          // handle attribute selector
-          if (/\[[a-zA-Z0-9_\-=\^\$\*\~\!\|"'\.\:\?\#\/]+\]/.test(s)) {
-            // selectWithAttributes
-          }
-          else {
-            // normal stuff; selectWithoutAttributes
-          }
-
           // remove any empty strings Array.split might have added
           for (i = 0; i < flags.length; i += 1) {
             if (flags[i].length) {
@@ -226,6 +167,8 @@
           }
           flags = filtered;
 
+          // no token precedes the flag, so keep arrays in sync
+          // this means the scope is document -- we'll search by tag name
           if (tokens.length < flags.length) {
             tokens.unshift('tagname');
           }
@@ -254,7 +197,6 @@
             }
 
             if (/\[/.test(tokens[i])) {
-              attribute_mode = true;
               attr = flags[i];
               getter = 'hasAttribute';
             }
@@ -775,14 +717,14 @@
         }
       } // end collectValues
 
-      function collect (name, callback) {
+      function collect (cb_name, callback) {
         var rx = /^function ([a-zA-Z_]*)\(.*\)/;
 
         if (typeof arguments[0] != 'string') {
           throw new Error('The first argument to BigwheelForm.collect should be a string-- the name of the collector function');
         }
 
-        instance.collectors[name] = callback;
+        instance.collectors[cb_name] = callback;
       } // end collect
 
       if (class_suffix) {

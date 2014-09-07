@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*9/6/14*
+
+1. Attribute selector works. (`bW('input[type="text"]')`);
+
+
 *8/3/14*
 
 1. Store fields as an object, not an array, to access fields directly by name.
