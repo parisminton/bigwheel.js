@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*9/11/14*
+
+1. bWF.addCollector stores custom collection functions.
+
+
 *9/6/14*
 
 1. Attribute selector works. (`bW('input[type="text"]')`);

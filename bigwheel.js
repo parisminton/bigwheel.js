@@ -717,16 +717,6 @@
         }
       } // end collectValues
 
-      function collect (cb_name, callback) {
-        var rx = /^function ([a-zA-Z_]*)\(.*\)/;
-
-        if (typeof arguments[0] != 'string') {
-          throw new Error('The first argument to BigwheelForm.collect should be a string-- the name of the collector function');
-        }
-
-        instance.collectors[cb_name] = callback;
-      } // end collect
-
       if (class_suffix) {
         fclass = 'bW-form-' + class_suffix;
         if (!/fclass/.test(instance[0].className)) {
@@ -770,6 +760,26 @@
       f.val = function (name) {
         if (instance.fields[name]) { return instance.fields[name].value; }
       } // end bWF.val
+
+      f.addCollector = function (callback, cbname) {
+        var rx = /^function ([a-zA-Z_-]+)\(.*\)/,
+            fname;
+
+        if (!cbname) {
+          if (rx.test(callback)) {
+            fname = rx.exec(callback)[1];
+          }
+          else {
+            throw new Error('BigwheelForm.addCollector was passed anonymous function, but no name was passed.\n\nPlease pass a named function as its first argument or an additional name string as its second argument.');
+          }
+        }
+        else {
+          fname = cbname;
+        }
+
+        instance.collectors[fname] = callback;
+      } // end collect
+
 
       f.addToTests = function (test) {
         f.tests = f.tests || [];
