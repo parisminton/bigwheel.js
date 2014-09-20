@@ -150,7 +150,8 @@
         var slctr_array = slctr.split(','),
             parsed = [],
             i,
-            j;
+            j,
+            retained_scope = scope;
 
         function select (s) {
           var tokens = s.match(/[a-zA-Z0-9_-]\.[a-zA-Z0-9_-]|\s+\.|^\.|[a-zA-Z0-9_-]#[a-zA-Z0-9_-]|\s+#|^#|\s+|\.|[a-zA-Z0-9_-]\[[a-zA-Z0-9_-]|\s+\[|^\[|[\|\*\^\$\~\!]?=["']/g) || [],
@@ -218,7 +219,7 @@
 
         if (slctr_array.length > 1) {
           for (i = 0; i < slctr_array.length; i += 1) {
-            scope = document; // needs resetting for each call
+            scope = retained_scope; // consistent scope inside this loop
             select(slctr_array[i].replace(/^\s+/, ''));
             // scope is always an array at this point. we just want its members.
             for (j = 0; j < scope.length; j += 1) {
@@ -420,6 +421,16 @@
 
         return this;
       }, // end bW.all
+
+      each : function (func) {
+        var instance = this,
+            i,
+            len = this.length,
+            ndx, elem;
+
+        
+        return instance;
+      }, // end bW.each
 
       first : function () {
         return this.wrap(this[0]);
@@ -778,7 +789,8 @@
         }
 
         instance.collectors[fname] = callback;
-      } // end collect
+        return instance;
+      } // end bWF.addCollector
 
 
       f.addToTests = function (test) {
