@@ -4,9 +4,14 @@ bigwheel.js
 Changelog
 ---------
 
+*9/20/14*
+
+1. `bW.each` iterates through each item in the `Bigwheel` object.
+
+
 *9/11/14*
 
-1. bWF.addCollector stores custom collection functions.
+1. `bWF.addCollector` stores custom collection functions.
 
 
 *9/6/14*
@@ -27,7 +32,7 @@ Changelog
 
 1. Forms store references to all their fields at instantiation.
 
-2. `collectFields` saves all field values to the instance's `data` property.
+2. `bW.collectFields` saves all field values to the instance's `data` property.
 
 
 *7/31/14*
@@ -43,7 +48,7 @@ Changelog
 
 2. `bW.setRequiredFields` tells a form instance which fields cannot be ignored.
 
-3. A few helpers get moved to the bW wrapper.
+3. A few helpers get moved to the `bW` wrapper.
 
 
 *7/28/14*
@@ -77,7 +82,7 @@ Changelog
 
 1. `bW.find` takes a selector and grabs all the matching elements within the scope of the current ones. It returns a new `Bigwheel` object.
 
-2. The `bW.wrap` helper accepts a DOM reference and returns a Bigwheel object.
+2. The `bW.wrap` helper accepts a DOM reference and returns a `Bigwheel` object.
 
 3. Got rid of the `selector` property.
 
@@ -103,13 +108,11 @@ Changelog
 2. Initial attempt at `bW.first`, a way to isolate only the first of the matched elements. It needs to wrap this element in the `Bigwheel` object.
 
 
-
 *7/1/14*
 
 1. `bW.before` and `bW.after` insert a given element relative to each matched element in the DOM.
 
 2. Fixed a bug where calling `getElementById` on an element that was itself selected by ID (`bW('#firstID #secondID');`) threw an error. This isn't the best way to select things, but supporting it shouldn't cause Bigwheel to choke.
-
 
 
 *6/20/14*
@@ -119,17 +122,14 @@ Changelog
 2. `bW.css` sets style properties.
 
 
-
 *6/16/14*
 
 1. `bW` is now a function that returns an instance of the `Bigwheel` object.
 
 
-
 *6/1/14*
 
 1. Basic selector engine doesn't fail too much with IDs, classes and nested elements.
-
 
 
 *5/30/14*

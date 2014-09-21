@@ -425,10 +425,13 @@
       each : function (func) {
         var instance = this,
             i,
-            len = this.length,
-            ndx, elem;
+            len = instance.length;
 
+        for (i = 0; i < len; i += 1) {
+          func.apply(instance, [i, instance[i]]);
+        }
         
+        console.log('Pearson.');
         return instance;
       }, // end bW.each
 
