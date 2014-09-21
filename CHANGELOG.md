@@ -6,7 +6,7 @@ Changelog
 
 *9/20/14*
 
-1. `bW.each` iterates through each item in the `Bigwheel` object.
+1. `bW.each` iterates through each element in the `Bigwheel` object.
 
 
 *9/11/14*

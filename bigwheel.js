@@ -431,7 +431,6 @@
           func.apply(instance, [i, instance[i]]);
         }
         
-        console.log('Pearson.');
         return instance;
       }, // end bW.each
 
@@ -697,7 +696,7 @@
       instance.fields = {};
       instance.required_fields = [];
       instance.collectors = {};
-      instance.data = {};
+      instance.formData = {};
 
       // ### bWF HELPERS  ###
       function bruiseField (field) {
@@ -727,7 +726,7 @@
         var name;
 
         for (name in instance.fields) {
-          instance.data[name] = instance.fields[name].value;
+          instance.formData[name] = instance.fields[name].value;
         }
       } // end collectValues
 
@@ -842,7 +841,7 @@
         ajaxOpts = {
           type: 'POST',
           url: url_goes_here,
-          data: f.JSONData,
+          data: f.formData,
           success: function (data) {
             f.showThanks();
           },
