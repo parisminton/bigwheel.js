@@ -728,6 +728,10 @@
         for (name in instance.fields) {
           instance.formData[name] = instance.fields[name].value;
         }
+
+        for (key in items) {
+          collect[items[key].id]();
+        }
       } // end collectValues
 
       if (class_suffix) {
