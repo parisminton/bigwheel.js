@@ -160,7 +160,7 @@
               filtered = [],
               i;
           
-          // remove any empty strings Array.split might have added
+          // remove any empties from Array.split
           for (i = 0; i < flags.length; i += 1) {
             if (flags[i].length) {
               filtered.push(flags[i]);
@@ -722,18 +722,6 @@
         return empty;
       } // end areFieldsEmpty
 
-      function collectValues () {
-        var name;
-
-        for (name in instance.fields) {
-          instance.formData[name] = instance.fields[name].value;
-        }
-
-        for (key in items) {
-          collect[items[key].id]();
-        }
-      } // end collectValues
-
       if (class_suffix) {
         fclass = 'bW-form-' + class_suffix;
         if (!/fclass/.test(instance[0].className)) {
@@ -797,6 +785,37 @@
         instance.collectors[fname] = callback;
         return instance;
       } // end bWF.addCollector
+
+      f.collectValues = function (c) {
+        var props,
+            val;
+
+        // remove any empties from Array.split
+        function filter (pa) {
+          var prop_array = [],
+              i,
+              len = pa.length;
+
+          for (i = 0; i < len; i += 1) {
+            if (pa[i].length) {
+              prop_array.push(pa[i]);
+            }
+          }
+          return prop_array;
+        }
+
+        function setProperties (prop_array, val) {
+          if (prop_array.length == 2) {
+            instance.formData[prop_array[1]] = val;
+          }
+        }
+
+        for (key in c) {
+          props = c[key].split(/\.|\[|\]/);
+          props = filter(props);
+          val = bW(key).val();
+        }
+      } // end collectValues
 
 
       f.addToTests = function (test) {
