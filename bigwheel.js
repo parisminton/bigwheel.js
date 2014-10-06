@@ -790,30 +790,46 @@
         var props,
             val;
 
-        // remove any empties from Array.split
+        // remove empties from Array.split
         function filter (pa) {
           var prop_array = [],
               i,
               len = pa.length;
 
           for (i = 0; i < len; i += 1) {
-            if (pa[i].length) {
-              prop_array.push(pa[i]);
+            if (!pa[i].length) {
+              pa.splice(i, 1);
+              len = (len - 1);
             }
           }
-          return prop_array;
-        }
+        } // end filter
 
-        function setProperties (prop_array, val) {
-          if (prop_array.length == 2) {
-            instance.formData[prop_array[1]] = val;
+        function collect (prop_array, val) {
+          var len = prop_array.length,
+              i,
+              obj = instance.formData;
+
+          for (i = 0; i < len; i += 1) {
+            if (/\d+/.test(prop_array[(i + 1)])) {
+              if (!Array.isArray(obj[prop_array[i]])) {
+                obj[prop_array[i]] = [{}];
+              }
+            }
+            else {
+              if (typeof obj[prop_array[i]] != 'object') {
+                obj[prop_array[i]] = (i === (len - 1)) ? val : {};
+              }
+            }
+            obj = obj[prop_array[i]];
           }
-        }
+        } // end collect
 
         for (key in c) {
           props = c[key].split(/\.|\[|\]/);
-          props = filter(props);
+          filter(props);
           val = bW(key).val();
+
+          collect(props, val);
         }
       } // end collectValues
 
