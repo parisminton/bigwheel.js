@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*10/27/14*
+
+1. Support for selector strings with interpolated regular expressions.
+
+
 *9/20/14*
 
 1. `bW.each` iterates through each element in the `Bigwheel` object.

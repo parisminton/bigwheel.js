@@ -57,7 +57,7 @@
           for (i = 0; i < len; i += 1) {
             nodes = list[i][getter](filter);
 
-            if (nodes.constructor === HTMLCollection ||
+            if (nodes && nodes.constructor === HTMLCollection ||
                 nodes.constructor === NodeList) {
               parseNodes(nodes);
             }
@@ -67,28 +67,39 @@
           }
         } // end drillDown
 
+        // an inefficient last resort for when the attribute selector is not scoped
+        function scanAllAttributes (attr) {
+          var body = document.getElementsByTagName('body')[0],
+              collection = [];
+
+          function testForAttribute (node) {
+            var j,
+                len;
+
+            if (node.nodeType === 1 && node.hasAttribute(attr)) {
+              collection.push(node);
+            }
+            if (node.nodeType === 1 && node.hasChildNodes()) {
+              j = 0;
+              len = node.childNodes.length;
+
+              for (j = 0; j < len; j += 1) {
+                testForAttribute(node.childNodes[j]);
+              }
+            }
+          }
+
+          testForAttribute(body);
+
+          return list = collection;
+        } // end scanAllAttributes
+
         function testAttribute (list) {
           var i,
               len = list.length;
 
-          // an inefficient last resort for when the attribute selector is not scoped
-          function scanAllAttributes (f) {
-            var i,
-                everything = document.getElementsByTagName('*'),
-                elen = everything.length,
-                nodes = [];
-
-            for (i = 0; i < elen; i += 1) {
-              if (everything[i].hasAttribute(f)) {
-                nodes.push(everything[i]);
-              }
-            }
-
-            list = nodes;
-          } // end scanAllAttributes
-
           if (list[0] === document && len === 1) {
-            scanAllAttributes(filter);
+            list = scanAllAttributes(filter);
           }
 
           len = list.length;
@@ -114,6 +125,61 @@
           }
         } // end matchAttribute
 
+
+        function matchRegex (list) {
+          var patterns = filter.match(/\/.+?\//g),
+              rx = filter,
+              i,
+              identifier = (attr === 'class') ? 'className' : 'id',
+              p_len,
+              l_len;
+
+          // creating a global regex that'll match a string
+          // masquerading as a regex is way harder than it
+          // ought to be ... just like this code
+          function rxer (rx_string) {
+            var letters,
+                quantifier,
+                q_rx;
+
+            if (/\/\\.+\//.test(rx_string)) {
+              letters = /\/\\(.+)\//.exec(rx_string)[1];
+              if (/\+|\?|\*/.test(letters)) {
+                quantifier = /(\+|\?|\*)/.exec(letters)[1];
+                q_rx = new RegExp('\\' + quantifier, 'g');
+                letters = letters.replace(q_rx, '\\' + quantifier);
+              }
+              return new RegExp('\/\\\\' + letters + '\/', 'g');
+            }
+          }
+          
+          patterns = storeUniques(patterns);
+          p_len = patterns.length;
+
+          for (i = 0; i < p_len; i += 1) {
+            if (/^\/.+\/$/.test(patterns[i])) {
+              rx = rx.replace(
+                rxer(patterns[i], 'g'), patterns[i].replace(/^\/|\/$/g, '')
+              );
+            }
+          }
+
+          rx = new RegExp(rx);
+
+          if (list[0] === document && list.length === 1) {
+            list = scanAllAttributes(attr); // returns list
+          }
+          l_len = list.length;
+
+          for (i = 0; i < l_len; i += 1) {
+            if (rx.test(list[i][identifier])) {
+              filtered_nodes.push(list[i]);
+            }
+          }
+
+          return rx;
+        } // end matchRegex
+
         function matchSpecifier (list) {
           var i,
               len = list.length,
@@ -137,6 +203,9 @@
         }
         else if (/matchAttribute/.test(getter)) {
           matchAttribute(list);
+        }
+        else if (/matchRegex/.test(getter)) {
+          matchRegex(list);
         }
         else {
           drillDown(list);
@@ -204,6 +273,20 @@
             
             if (/[\|\*\^\$\~\!]?=/.test(tokens[i])) {
               getter = 'matchAttribute';
+            }
+
+            if (/\/(.*)\//.test(flags[i])) {
+              getter = 'matchRegex';
+
+              if (/\./.test(tokens[i])) {
+                attr = 'class';
+              }
+              else if (/\#/.test(tokens[i])) {
+                attr = 'id';
+              }
+              else {
+                throw new Error('Regular expressions can only be used with a class or ID selector -- strings that begin with a period (.) or pound sign (#).');
+              }
             }
 
             // put singular DOM references, but not HTMLCollections, in an array
@@ -796,6 +879,12 @@
               i,
               len = pa.length;
 
+          function populateArray (key) {
+            if (/##/.test(key)) {
+              // do something;
+            }
+          }
+          
           for (i = 0; i < len; i += 1) {
             if (!pa[i].length) {
               pa.splice(i, 1);
@@ -811,6 +900,7 @@
 
           for (i = 0; i < len; i += 1) {
             if (/\d+/.test(prop_array[(i + 1)])) {
+              // function 
               if (!Array.isArray(obj[prop_array[i]])) {
                 obj[prop_array[i]] = [{}];
               }
