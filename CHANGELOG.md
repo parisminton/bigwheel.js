@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*11/6/14*
+
+1. Class selectors do exact, not inclusive matches. So `bW('.^exercise/\\d+/$')` will not match the class `exercise0_set0`.
+
+
 *10/27/14*
 
 1. Support for selector strings with interpolated regular expressions.

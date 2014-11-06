@@ -57,7 +57,10 @@
           for (i = 0; i < len; i += 1) {
             nodes = list[i][getter](filter);
 
-            if (nodes && nodes.constructor === HTMLCollection ||
+            if (!nodes) {
+              throw new Error('Your selector doesn\'t create a valid DOM method.');
+            }
+            else if (nodes && nodes.constructor === HTMLCollection ||
                 nodes.constructor === NodeList) {
               parseNodes(nodes);
             }
@@ -130,9 +133,12 @@
           var patterns = filter.match(/\/.+?\//g),
               rx = filter,
               i,
+              j,
               identifier = (attr === 'class') ? 'className' : 'id',
+              class_list,
               p_len,
-              l_len;
+              l_len,
+              cl_len;
 
           // creating a global regex that'll match a string
           // masquerading as a regex is way harder than it
@@ -172,7 +178,18 @@
           l_len = list.length;
 
           for (i = 0; i < l_len; i += 1) {
-            if (rx.test(list[i][identifier])) {
+            if (identifier === 'className') {
+              class_list = list[i][identifier].split(' ');
+              cl_len = class_list.length;
+
+              for (j = 0; j < cl_len; j += 1) {
+                if (rx.test(class_list[j])) {
+                  filtered_nodes.push(list[i]);
+                  break;
+                }
+              }
+            }
+            else if (rx.test(list[i][identifier])) {
               filtered_nodes.push(list[i]);
             }
           }
@@ -182,14 +199,28 @@
 
         function matchSpecifier (list) {
           var i,
+              j,
               len = list.length,
+              cl_len,
               specifier,
-              rx = new RegExp(filter);
+              rx = new RegExp(filter),
+              class_list;
 
           for (i = 0; i < len; i += 1) {
             specifier = list[i][getter];
 
-            if (rx.test(specifier)) {
+            // class matches need to be exact, not partial
+            if (getter === 'className') {
+              class_list = list[i][getter].split(' ');
+              cl_len = class_list.length;
+
+              for (j = 0; j < cl_len; j += 1) {
+                if (specifier === class_list[j]) {
+                  filtered_nodes.push(list[i]);
+                }
+              }
+            }
+            else {
               filtered_nodes.push(list[i]);
             }
           }
@@ -879,12 +910,6 @@
               i,
               len = pa.length;
 
-          function populateArray (key) {
-            if (/##/.test(key)) {
-              // do something;
-            }
-          }
-          
           for (i = 0; i < len; i += 1) {
             if (!pa[i].length) {
               pa.splice(i, 1);
@@ -893,19 +918,25 @@
           }
         } // end filter
 
-        function collect (prop_array, val) {
+        function populateArray (sel) {
+        }
+
+        function collect (prop_array) {
           var len = prop_array.length,
               i,
-              obj = instance.formData;
+              obj = instance.formData,
+              val;
 
           for (i = 0; i < len; i += 1) {
-            if (/\d+/.test(prop_array[(i + 1)])) {
-              // function 
+            // muliple values, unknown quantity
+            if (/##/.test(prop_array[(i + 1)])) {
               if (!Array.isArray(obj[prop_array[i]])) {
                 obj[prop_array[i]] = [{}];
+                populateArray(key.replace(/##/g, '/\\d+/'));
               }
             }
-            else {
+            else { // a single value
+              val = bW(key).val();
               if (typeof obj[prop_array[i]] != 'object') {
                 obj[prop_array[i]] = (i === (len - 1)) ? val : {};
               }
@@ -917,9 +948,8 @@
         for (key in c) {
           props = c[key].split(/\.|\[|\]/);
           filter(props);
-          val = bW(key).val();
 
-          collect(props, val);
+          collect(props);
         }
       } // end collectValues
 
