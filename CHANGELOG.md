@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*11/16/14*
+
+1. It may need some refactoring, but `bWF.collectValues` works.
+
+
 *11/6/14*
 
 1. Class selectors do exact, not inclusive matches. So `bW('.^exercise/\\d+/$')` will not match the class `exercise0_set0`.

@@ -902,7 +902,7 @@
 
       f.collectValues = function (c) {
         var props,
-            val;
+            fd_buffer = {};
 
         // remove empties from Array.split
         function filter (pa) {
@@ -918,39 +918,117 @@
           }
         } // end filter
 
-        function populateArray (sel) {
-        }
+        function collect (prop_array, selector) {
+          var i,
+              len = prop_array.length,
+              j,
+              j_len,
+              members,
+              member_buffer = [],
+              new_members,
+              val,
+              fd_scope = fd_buffer;
 
-        function collect (prop_array) {
-          var len = prop_array.length,
-              i,
-              obj = instance.formData,
-              val;
+          function initializeArray (sel, prop) {
+            var i,
+                len = bW(sel).length;
+
+            fd_scope[prop] = fd_scope[prop] || [];
+
+            for (i = 0; i < len; i += 1) {
+              fd_scope[prop].push({});
+            }
+            return fd_scope[prop];
+          } // end initializeArray
+
+          function populate (prop, val) {
+            var i,
+                len;
+
+            if (Array.isArray(fd_scope)) {
+              len = fd_scope.length;
+
+              for (i = 0; i < len; i += 1) {
+                fd_scope[i][prop] = val;
+              }
+            }
+            else if (!Array.isArray(fd_scope[prop])) {
+              fd_scope[prop] = val;
+            }
+          } // end populate
+
+          function mergeArrays (a, container) {
+            var i,
+                len = a.length;
+            
+            for (i = 0; i < len; i += 1) {
+              if (!Array.isArray(a[i])) {
+                container.push(a[i]);
+              }
+              else {
+                mergeArrays(a[i], container);
+              }
+            }
+          } // end mergeArrays
 
           for (i = 0; i < len; i += 1) {
-            // muliple values, unknown quantity
+            // multiple values, unknown quantity
             if (/##/.test(prop_array[(i + 1)])) {
-              if (!Array.isArray(obj[prop_array[i]])) {
-                obj[prop_array[i]] = [{}];
-                populateArray(key.replace(/##/g, '/\\d+/'));
+              // operating on a single node
+              if (!Array.isArray(fd_scope[prop_array[i]]) &&
+                  !Array.isArray(fd_scope)) {
+                initializeArray(selector, prop_array[i]);
+              }
+              // operating on multiple nodes
+              else if (Array.isArray(fd_scope)) {
+                new_members = [];
+                member_buffer = [];
+                members = fd_scope;
+                j_len = members.length;
+                for (j = 0; j < j_len; j += 1) {
+                  fd_scope = members[j];
+                  // initialize multiple nodes
+                  if (!fd_scope[prop_array[i]] ||
+                      fd_scope[prop_array[i]].length < bW(selector).length) {
+                    member_buffer.push(initializeArray(selector, prop_array[i]));
+                  }
+                  // corral multiple nodes
+                  else {
+                    member_buffer.push(fd_scope[prop_array[i]]);
+                  }
+                }
+                mergeArrays(member_buffer, new_members);
+                fd_scope = new_members;
+                continue;
+              }
+              fd_scope = fd_scope[prop_array[i]];
+              continue;
+            }
+            // a single value
+            if (prop_array[i] != '##') {
+              if (typeof fd_scope[prop_array[i]] != 'object') {
+                val = (i === (len - 1)) ? bW(key).val() : {};
+              }
+              populate(prop_array[i], val);
+              if (typeof val === 'object') {
+                fd_scope = fd_scope[prop_array[i]];
               }
             }
-            else { // a single value
-              val = bW(key).val();
-              if (typeof obj[prop_array[i]] != 'object') {
-                obj[prop_array[i]] = (i === (len - 1)) ? val : {};
-              }
-            }
-            obj = obj[prop_array[i]];
           }
         } // end collect
 
         for (key in c) {
-          props = c[key].split(/\.|\[|\]/);
+          if (typeof c[key] != 'string') {
+            throw new Error('The value for key ' + key + ' in the collector object must be a string');
+          }
+          else {
+            props = c[key].split(/\.|\[|\]/);
+          }
           filter(props);
 
-          collect(props);
+          collect(props, key, c[key]);
         }
+        instance.formData = fd_buffer;
       } // end collectValues
 
 
