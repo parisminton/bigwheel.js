@@ -1002,16 +1002,17 @@
                 continue;
               }
               fd_scope = fd_scope[prop_array[i]];
-              continue;
             }
-            // a single value
-            if (prop_array[i] != '##') {
-              if (typeof fd_scope[prop_array[i]] != 'object') {
-                val = (i === (len - 1)) ? bW(key).val() : {};
-              }
-              populate(prop_array[i], val);
-              if (typeof val === 'object') {
-                fd_scope = fd_scope[prop_array[i]];
+            else {
+              // a single value
+              if (prop_array[i] != '##') {
+                if (typeof fd_scope[prop_array[i]] != 'object') {
+                  val = (i === (len - 1)) ? bW(key).val() : {};
+                }
+                populate(prop_array[i], val);
+                if (typeof val === 'object') {
+                  fd_scope = fd_scope[prop_array[i]];
+                }
               }
             }
           }
@@ -1028,7 +1029,27 @@
 
           collect(props, key, c[key]);
         }
-        instance.formData = fd_buffer;
+
+        function copyProperties (donor, recipient) {
+          var i,
+              len;
+
+          for (key in donor) {
+            if (Array.isArray(donor[key])) {
+              recipient[key] = [];
+              copyProperties(donor[key], recipient[key]);
+            }
+            else if (typeof donor[key] === 'object') {
+              recipient[key] = {};
+              copyProperties(donor[key], recipient[key]);
+            }
+            else {
+              recipient[key] = donor[key];
+            }
+          }
+        }
+
+        copyProperties(fd_buffer, instance.formData);
       } // end collectValues
 
 
