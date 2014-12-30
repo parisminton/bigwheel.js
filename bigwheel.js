@@ -453,6 +453,25 @@
       return args;
     } // end parseArray
 
+    function copyProperties (donor, recipient) {
+      var i,
+          len;
+
+      for (key in donor) {
+        if (Array.isArray(donor[key])) {
+          recipient[key] = [];
+          copyProperties(donor[key], recipient[key]);
+        }
+        else if (typeof donor[key] === 'object') {
+          recipient[key] = {};
+          copyProperties(donor[key], recipient[key]);
+        }
+        else {
+          recipient[key] = donor[key];
+        }
+      }
+    } // end copyProperties
+
     function Bigwheel (elements) {
       var instance = this,
           i,
@@ -793,7 +812,41 @@
         form_obj = new BigwheelForm(form, submit, suffix);
         form_obj.init();
         return form_obj;
-      } // end bW.setForm
+      }, // end bW.setForm
+
+      ajax : function (url, ajaxSettings) {
+        var bWXHR = {
+          done : function () {},
+          fail : function () {},
+          always : function () {},
+          then : function () {},
+          init : function () {
+            this.xhr = new XMLHttpRequest();
+          }
+        },
+        settings : {
+          type : 'GET';
+        };
+
+        if (ajaxSettings && typeof ajaxSettings === 'object') {
+          copyProperties(ajaxSettings, settings);
+        }
+
+        if (typeof url === 'object') {
+          copyProperties(ajaxSettings, settings);
+        }
+
+        // the first argument here will trump any URL 
+        // specified in ajaxSettings
+        if (typeof url === 'string') {
+          /* ### TODO: Should this be sanitized? ### */
+          settings.url = url;
+        }
+
+
+        
+        return bWXHR;
+      } // end bW.ajax
 
     } // end Bigwheel prototype
 
@@ -1028,25 +1081,6 @@
           filter(props);
 
           collect(props, key, c[key]);
-        }
-
-        function copyProperties (donor, recipient) {
-          var i,
-              len;
-
-          for (key in donor) {
-            if (Array.isArray(donor[key])) {
-              recipient[key] = [];
-              copyProperties(donor[key], recipient[key]);
-            }
-            else if (typeof donor[key] === 'object') {
-              recipient[key] = {};
-              copyProperties(donor[key], recipient[key]);
-            }
-            else {
-              recipient[key] = donor[key];
-            }
-          }
         }
 
         copyProperties(fd_buffer, instance.formData);
