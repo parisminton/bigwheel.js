@@ -824,8 +824,8 @@
             this.xhr = new XMLHttpRequest();
           }
         },
-        settings : {
-          type : 'GET';
+        settings = {
+          type : 'GET'
         };
 
         if (ajaxSettings && typeof ajaxSettings === 'object') {
@@ -833,7 +833,7 @@
         }
 
         if (typeof url === 'object') {
-          copyProperties(ajaxSettings, settings);
+          copyProperties(url, settings);
         }
 
         // the first argument here will trump any URL 
