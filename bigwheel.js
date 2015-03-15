@@ -472,6 +472,20 @@
       }
     } // end copyProperties
 
+    function parameterize (obj) {
+      var params = [],
+          current,
+          key;
+
+      for (key in obj) {
+        current = params.length;
+        params[current] = encodeURIComponent(key) + '=' + encodeURIComponent(obj[key]);
+        console.log(params[current]);
+      }
+      return '?' + params.join('&');
+
+    } // end parameterize
+
     function Bigwheel (elements) {
       var instance = this,
           i,
@@ -816,12 +830,14 @@
 
       ajax : function (url, ajaxSettings) {
         var bWXHR = {
-          done : function () {},
-          fail : function () {},
-          always : function () {},
-          then : function () {},
+          done : function (func) {
+                   if (func) { func(); }
+                 },
+          fail : function (func) {},
+          always : function (func) {},
+          then : function (func) {},
           init : function () {
-            this.xhr = new XMLHttpRequest();
+            this.xhr = new XMLHttpRequest(sttngs);
           }
         },
         settings = {
@@ -843,7 +859,13 @@
           settings.url = url;
         }
 
-
+        // bW.ajax({
+        //   type : 'POST',
+        //   url : 'http://somethingorother.com',
+        //   data : data_var,
+        //   success : functionThatConfirmsDataWasSaved,
+        //   error : functionThatExplainsTheError
+        // });
         
         return bWXHR;
       } // end bW.ajax
