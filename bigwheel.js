@@ -202,20 +202,17 @@
               j,
               len = list.length,
               cl_len,
-              specifier,
               rx = new RegExp(filter),
               class_list;
 
           for (i = 0; i < len; i += 1) {
-            specifier = list[i][getter];
-
             // class matches need to be exact, not partial
             if (getter === 'className') {
               class_list = list[i][getter].split(' ');
               cl_len = class_list.length;
 
               for (j = 0; j < cl_len; j += 1) {
-                if (specifier === class_list[j]) {
+                if (filter === class_list[j]) {
                   filtered_nodes.push(list[i]);
                 }
               }
@@ -454,8 +451,7 @@
     } // end parseArray
 
     function copyProperties (donor, recipient) {
-      var i,
-          len;
+      var key;
 
       for (key in donor) {
         if (Array.isArray(donor[key])) {

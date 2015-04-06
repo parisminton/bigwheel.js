@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*4/5/15*
+
+1. Fixed the compound class selector, closing #26.
+
+
 *11/16/14*
 
 1. It may need some refactoring, but `bWF.collectValues` works.
