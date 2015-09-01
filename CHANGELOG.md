@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*9/1/15*
+
+1. `bW.ajax` wraps the XMLHttpRequest object.
+
+
 *4/5/15*
 
 1. Fixed the compound class selector, closing #26.

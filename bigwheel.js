@@ -450,25 +450,25 @@
       return args;
     } // end parseArray
 
-    function copyProperties (donor, recipient) {
+    bW.copyProperties = function (donor, recipient) {
       var key;
 
       for (key in donor) {
         if (Array.isArray(donor[key])) {
           recipient[key] = [];
-          copyProperties(donor[key], recipient[key]);
+          bW.copyProperties(donor[key], recipient[key]);
         }
         else if (typeof donor[key] === 'object') {
           recipient[key] = {};
-          copyProperties(donor[key], recipient[key]);
+          bW.copyProperties(donor[key], recipient[key]);
         }
         else {
           recipient[key] = donor[key];
         }
       }
-    } // end copyProperties
+    } // end bW.copyProperties
 
-    function parameterize (obj) {
+    bW.parameterize = function (obj) {
       var params = [],
           current,
           key;
@@ -476,11 +476,10 @@
       for (key in obj) {
         current = params.length;
         params[current] = encodeURIComponent(key) + '=' + encodeURIComponent(obj[key]);
-        console.log(params[current]);
       }
       return '?' + params.join('&');
 
-    } // end parameterize
+    } // end bW.parameterize
 
     function Bigwheel (elements) {
       var instance = this,
@@ -824,47 +823,7 @@
         return form_obj;
       }, // end bW.setForm
 
-      ajax : function (url, ajaxSettings) {
-        var bWXHR = {
-          done : function (func) {
-                   if (func) { func(); }
-                 },
-          fail : function (func) {},
-          always : function (func) {},
-          then : function (func) {},
-          init : function () {
-            this.xhr = new XMLHttpRequest(sttngs);
-          }
-        },
-        settings = {
-          type : 'GET'
-        };
-
-        if (ajaxSettings && typeof ajaxSettings === 'object') {
-          copyProperties(ajaxSettings, settings);
-        }
-
-        if (typeof url === 'object') {
-          copyProperties(url, settings);
-        }
-
-        // the first argument here will trump any URL 
-        // specified in ajaxSettings
-        if (typeof url === 'string') {
-          /* ### TODO: Should this be sanitized? ### */
-          settings.url = url;
-        }
-
-        // bW.ajax({
-        //   type : 'POST',
-        //   url : 'http://somethingorother.com',
-        //   data : data_var,
-        //   success : functionThatConfirmsDataWasSaved,
-        //   error : functionThatExplainsTheError
-        // });
-        
-        return bWXHR;
-      } // end bW.ajax
+      ajax : ajaxFunc,
 
     } // end Bigwheel prototype
 
@@ -1101,7 +1060,7 @@
           collect(props, key, c[key]);
         }
 
-        copyProperties(fd_buffer, instance.formData);
+        bW.copyProperties(fd_buffer, instance.formData);
       } // end collectValues
 
 
@@ -1187,8 +1146,95 @@
 
     return new Bigwheel(selectElements(selector));
 
-  }; // end bW selector engine and constructor
+  }, // end bW selector engine and constructor
+      
+  ajaxFunc = function (url, ajaxSettings) {
+    var bWXHR = function () {
+      this.xhr = new XMLHttpRequest();
+      this.setup = function (s) {
+        var dataTypes = {
+          json : 'application/json',
+          xml : 'application/xml', 
+          html : 'text/html',
+          text : 'text/plain',
+          script : 'text/javascript'
+          // jsonp : create a new <script> tag
+        };
 
+        if (s.dataType) {
+          this.xhr.setRequestHeader('Accept', dataTypes[s.dataType]);
+        }
+      },
+      this.done = function (func) {
+        console.log('We must be in love.');
+        console.log(this);
+        if (typeof func === 'string') {
+          console.log(func);
+        }
+        // if (func) { func(); }
+      },
+      this.fail = function (func) {},
+      this.always = function (func) {},
+      this.then = function (func) {}
+    },
+    settings = {
+      method : 'get',
+      async : true
+    },
+    query_params = '',
+    bX;
+
+    if (ajaxSettings && typeof ajaxSettings === 'object') {
+      bW.copyProperties(ajaxSettings, settings);
+    }
+
+    if (typeof url === 'object') {
+      bW.copyProperties(url, settings);
+    }
+
+    // the first argument here will trump any URL 
+    // specified in ajaxSettings
+    if (typeof url === 'string') {
+      /* ### TODO: Should this be sanitized? ### */
+      settings.url = url;
+    }
+    /* ### BELOW THIS POINT, ajaxSettings HAS BEEN MAPPED TO settings ### */
+
+    // prepare the URL -- concatenate base and query parameters
+    if (settings.data && typeof settings.data === 'object') {
+      query_params = bW.parameterize(settings.data);
+      settings.purl = settings.url + query_params; 
+    }
+
+    if (typeof settings.success != 'function') {
+      // raise error
+    }
+
+    bX = new bWXHR();
+
+    // XMLHttpRequest prep and transaction
+    bX.xhr.addEventListener('load', function (data, status) {
+      settings.success(bX.xhr.responseText, bX.xhr.statusText);
+      return bX;
+    });
+    bX.xhr.open(settings.method, settings.purl, settings.async);
+    // modifying headers, etc. has to happen after opening but before sending
+    bX.setup(settings);
+    bX.xhr.send();
+
+    // bW.ajax({
+    //   type : 'POST',
+    //   url : 'http://somethingorother.com',
+    //   data : data_var,
+    //   success : functionThatConfirmsDataWasSaved,
+    //   error : functionThatExplainsTheError
+    // });
+    
+    return bX;
+  }; // end ajaxFunc
+
+  bW.ajax = ajaxFunc;
+            
   if (typeof define === 'function' && define.amd) {
     define(function () {
       return bW;
