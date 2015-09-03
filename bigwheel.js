@@ -1212,6 +1212,14 @@
 
     bX = new bWXHR();
 
+    function bWXHRError(message) {
+      this.message = message || 'Something went wrong with your AJAX request.';
+      this.name = 'bWXHRError';
+      this.stack = new Error().stack;
+    }
+    bWXHRError.prototype = new Error().prototype;
+    bWXHRError.constructor = Error;
+
     // XMLHttpRequest prep and transaction
     bX.xhr.addEventListener('load', function (data, status) {
       settings.success(bX.xhr.responseText, bX.xhr.statusText);
