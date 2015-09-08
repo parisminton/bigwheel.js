@@ -1217,12 +1217,24 @@
       this.name = 'bWXHRError';
       this.stack = new Error().stack;
     }
-    bWXHRError.prototype = new Error().prototype;
+    bWXHRError.prototype = new Error();
     bWXHRError.constructor = Error;
 
     // XMLHttpRequest prep and transaction
     bX.xhr.addEventListener('load', function (data, status) {
-      settings.success(bX.xhr.responseText, bX.xhr.statusText);
+      if (/400/.test(bX.xhr.status)) {
+        // if there's a specialized message, show it
+        if (JSON.parse(bX.xhr.responseText).error) {
+          throw new bWXHRError(JSON.parse(bX.xhr.responseText).error);
+        }
+      }
+      else {
+        settings.success(bX.xhr.responseText, bX.xhr.statusText);
+      }
+      return bX;
+    });
+    bX.xhr.addEventListener('error', function (error, status) {
+      settings.error(bX.xhr);
       return bX;
     });
     bX.xhr.open(settings.method, settings.purl, settings.async);
