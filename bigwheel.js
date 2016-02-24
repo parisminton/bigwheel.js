@@ -13,6 +13,64 @@
 
     bW.forms = bW.forms || [];
 
+    bW.uniq = function (list) {
+      var i,
+          len = list.length,
+          j,
+          j_len,
+          uniques = [],
+          is_unique;
+
+      function compare (l_val, u_val) {
+        var i,
+            len;
+            
+        if (/string|number|boolean/.test(typeof l_val) ||
+            /HTML|Node/.test(l_val.constructor.toString())) {
+          if (l_val === u_val) {
+            is_unique = false;
+          }
+        }
+        else if (Array.isArray(l_val)) {
+          len = l_val.length;
+          if (Array.isArray(u_val)) {
+            for (i = 0; i < len; i += 1) {
+              if (l_val[i] != u_val[i]) { break };
+              // if we reach the end of the loop and all values
+              // have been indentical in the same sequence,
+              // this array is not unique
+              if (i === (len - 1)) {
+                is_unique = false;
+              }
+            } // end array comparison loop
+          }
+        }
+        else if (/Object/.test(l_val.constructor.toString())) {
+          if (JSON.stringify(l_val) === JSON.stringify(u_val)) {
+            is_unique = false;
+          }
+        }
+        return is_unique;
+      } // end compare
+
+      for (i = 0; i < len; i += 1) {
+        is_unique = true;
+        if (i === 0) {
+          uniques.push(list[i]);
+        }
+        j_len = uniques.length;
+        for (j = 0; j < j_len; j += 1) {
+          compare(list[i], uniques[j]);
+          if (!is_unique) { break };
+        }
+        if (is_unique) {
+          uniques.push(list[i]);
+        }
+      }
+      return uniques;
+    } // end bW.uniq
+
+
     // ### bW selector engine and constructor ###
     function selectElements (selectr, scope) {
       var getter;
@@ -24,22 +82,6 @@
             len = list.length,
             nodes,
             filtered_nodes = []; 
-
-        function storeUniques (list) {
-          var i,
-              len = list.length,
-              uniques = [];
-
-          for (i = 0; i < len; i += 1) {
-            if (uniques.some(function (u) {
-                return u === list[i];
-              })) {
-              continue;
-            }
-            uniques.push(list[i]);
-          }
-          return uniques;
-        } // end storeUniques
 
         function parseNodes (list) {
           var i,
@@ -159,7 +201,7 @@
             }
           }
           
-          patterns = storeUniques(patterns);
+          patterns = bW.uniq(patterns);
           p_len = patterns.length;
 
           for (i = 0; i < p_len; i += 1) {
@@ -239,7 +281,7 @@
           drillDown(list);
         }
 
-        scope = storeUniques(filtered_nodes);
+        scope = bW.uniq(filtered_nodes);
         return scope;
       } // end filterHTMLCollection
 
@@ -313,7 +355,7 @@
                 attr = 'id';
               }
               else {
-                throw new Error('Regular expressions can only be used with a class or ID selector -- strings that begin with a period (.) or pound sign (#).');
+                throw new Error('Bigwheel can only perform regular expression matches using a class or ID selector -- strings that contain a period (.) or pound sign (#).');
               }
             }
 
@@ -919,7 +961,7 @@
             fname = rx.exec(callback)[1];
           }
           else {
-            throw new Error('BigwheelForm.addCollector was passed anonymous function, but no name was passed.\n\nPlease pass a named function as its first argument or an additional name string as its second argument.');
+            throw new Error('BigwheelForm.addCollector was passed an anonymous function, but no name was passed.\n\nPlease pass a named function as its first argument or an additional name string as its second argument.');
           }
         }
         else {
@@ -932,7 +974,8 @@
 
       f.collectValues = function (c) {
         var props,
-            fd_buffer = {};
+            fd_buffer = {},
+            fd_buffer2 = {};
 
         // remove empties from Array.split
         function filter (pa) {
@@ -947,6 +990,97 @@
             }
           }
         } // end filter
+
+        // parse and store all the regex matches in order
+        function parseRegexMatches (selectr, nodename) {
+          var collection = bW(selectr),
+              i,
+              len,
+              rxes = selectr.match(/\/[^\/]*\//g),
+              nodes = nodename.split(/\[##\]\.?/),
+              indices,
+              ndc_len, // for enumerating indices
+              ndc_i,
+              narrow_rx = '';
+
+          function getIndices (r, s) {
+            // match against every element in the collection
+            // each group of matches is a set in the indices array
+            // [ [0, 1, 2 ...], [0, 1], ... ]
+            var ndcs = [],
+                i,
+                j,
+                len = r.length,
+                c_len = collection.length,
+                class_or_id;
+            
+            // regex matches only work with class or ID selectors
+            if (/\./.test(selectr)) {
+              class_or_id = 'class';
+            }
+            if (/^#/.test(selectr)) {
+              class_or_id = 'id';
+            }
+
+            if (collection) {
+              for (i = 0; i < len; i += 1) {
+                for (j = 0; j < c_len; j += 1) {
+                  if (collection[j].getAttribute(class_or_id)) {
+                    ndcs.push(collection[j].getAttribute(class_or_id).match(r[i]));
+                  }
+                }
+              }
+            }
+            return bW.uniq(ndcs);
+          } // end getIndices
+
+          function makeNarrowRx (nodz, ndicez) {
+            var i,
+                len = ndicez.length,
+                nRX = '';
+
+            for (i = 0; i < len; i += 1) {
+              nRX += nodz[i] + ndicez[i];
+              if (i < (len - 1)) {
+                nRX += '_';
+              }
+              // more nodes than indices and we're on
+              // the last index
+              if (nodz.length === (len + 1) &&
+                  i === (len - 1)) {
+                nRX += '_' + nodz[(i + 1)];
+              }
+            }
+            return nRX;
+          } // end makeNarrowRx
+
+          len = collection.length;
+
+          if (rxes) { // turn strings to regexes within the array
+            filter(rxes);
+            len = rxes.length;
+            for (i = 0; i < len; i += 1) {
+              rxes[i] = new RegExp(
+                rxes[i].replace(/\//g, '')
+              , 'g');
+            }
+            indices = getIndices(rxes, selectr);
+          }
+
+          if (indices) { // make regex for narrowing
+            // filter(indices);
+            filter(nodes);
+            len = nodes.length;
+            ndc_len = indices.length;
+
+            // we need access to all the indices to assemble
+            // the selector and establish the depth of our array
+            for (ndc_i = 0; ndc_i < ndc_len; ndc_i += 1) {
+              // each member is itself an array ...
+              narrow_rx = makeNarrowRx(nodes, indices[ndc_i]);
+            }
+          }
+        } // end parseRegexMatches
 
         function collect (prop_array, selector) {
           var i,
@@ -1057,11 +1191,13 @@
           }
           filter(props);
 
+          parseRegexMatches(key, c[key]);
           collect(props, key, c[key]);
         }
 
         bW.copyProperties(fd_buffer, instance.formData);
-      } // end collectValues
+        console.log(instance.formData);
+      } // end bWF.collectValues
 
 
       f.addToTests = function (test) {

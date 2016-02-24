@@ -4,6 +4,18 @@ bigwheel.js
 Changelog
 ---------
 
+*2/23/16*
+
+1. Improved regex parsing in bWF.collectValues.
+
+2. Renamed `storeUniques` to `uniq`, and moved it one level up, to the *bW* object, so other functions could have access to it.
+
+
+*9/7/15*
+
+1. The *bWXHR* object supports an error callback.
+
+
 *9/1/15*
 
 1. `bW.ajax` wraps the XMLHttpRequest object.
