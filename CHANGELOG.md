@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*8/1/16*
+
+1. Changed the way form values are collected.
+
+
 *2/23/16*
 
 1. Improved regex parsing in bWF.collectValues.

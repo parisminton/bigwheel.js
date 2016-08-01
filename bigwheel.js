@@ -37,7 +37,7 @@
             for (i = 0; i < len; i += 1) {
               if (l_val[i] != u_val[i]) { break };
               // if we reach the end of the loop and all values
-              // have been indentical in the same sequence,
+              // have been identical in the same sequence,
               // this array is not unique
               if (i === (len - 1)) {
                 is_unique = false;
@@ -973,9 +973,9 @@
       } // end bWF.addCollector
 
       f.collectValues = function (c) {
-        var props,
-            fd_buffer = {},
-            fd_buffer2 = {};
+        var i,
+            len = c.length,
+            fd_buffer = {};
 
         // remove empties from Array.split
         function filter (pa) {
@@ -991,212 +991,71 @@
           }
         } // end filter
 
-        // parse and store all the regex matches in order
-        function parseRegexMatches (selectr, nodename) {
-          var collection = bW(selectr),
+        function collect (selector) {
+          var selected = bW(selector),
               i,
-              len,
-              rxes = selectr.match(/\/[^\/]*\//g),
-              nodes = nodename.split(/\[##\]\.?/),
-              indices,
-              ndc_len, // for enumerating indices
-              ndc_i,
-              narrow_rx = '';
+              len = selected.length;
 
-          function getIndices (r, s) {
-            // match against every element in the collection
-            // each group of matches is a set in the indices array
-            // [ [0, 1, 2 ...], [0, 1], ... ]
-            var ndcs = [],
-                i,
-                j,
-                len = r.length,
-                c_len = collection.length,
-                class_or_id;
-            
-            // regex matches only work with class or ID selectors
-            if (/\./.test(selectr)) {
-              class_or_id = 'class';
-            }
-            if (/^#/.test(selectr)) {
-              class_or_id = 'id';
-            }
+          function sort (selectr) {
+            var nodes = selectr.split(/\d+_+/),
+                indices = getIndices(selectr),
+                scope,
+                n_len;
 
-            if (collection) {
-              for (i = 0; i < len; i += 1) {
-                for (j = 0; j < c_len; j += 1) {
-                  if (collection[j].getAttribute(class_or_id)) {
-                    ndcs.push(collection[j].getAttribute(class_or_id).match(r[i]));
+            n_len = nodes.length;
+
+            function getIndices (selectr) {
+              var indices = [],
+                  rx = /(\d+)_/g,
+                  match;
+
+              while ((match = rx.exec(selectr)) != null) {
+                indices.push(match[1]);
+              }
+              return (indices.length) ? indices : false;
+            } // end getIndices
+
+            function store (nodez, indicez) {
+              var n,
+                  n_len = nodez.length,
+                  fscope = fd_buffer;
+
+              // drill as deep as necessary for this loop,
+              // but always start it from top-level fd_buffer
+              for (n = 0; n < n_len; n += 1) {
+                if (nodez[n]) {
+                  // no index; we expect this to be a flat node
+                  if (indicez[n] === undefined) {
+                    // fscope[nodez[n]] = bW('#' + selectr).val();
+                    fscope[nodez[n]] = document.querySelector('[name="' + selectr + '"]').value;
                   }
-                }
-              }
-            }
-            return bW.uniq(ndcs);
-          } // end getIndices
+                  else {
+                    // initialize the array
+                    fscope[nodez[n]] = fscope[nodez[n]] || [];
+                    fscope[nodez[n]][indicez[n]] = 
+                      fscope[nodez[n]][indicez[n]] || {};
+                    fscope = fscope[nodez[n]][indicez[n]];
+                  }
+                } // end if (n_len)
+              } // end for loop 
+            } // end function store
 
-          function makeNarrowRx (nodz, ndicez) {
-            var i,
-                len = ndicez.length,
-                nRX = '';
-
-            for (i = 0; i < len; i += 1) {
-              nRX += nodz[i] + ndicez[i];
-              if (i < (len - 1)) {
-                nRX += '_';
-              }
-              // more nodes than indices and we're on
-              // the last index
-              if (nodz.length === (len + 1) &&
-                  i === (len - 1)) {
-                nRX += '_' + nodz[(i + 1)];
-              }
-            }
-            return nRX;
-          } // end makeNarrowRx
-
-          len = collection.length;
-
-          if (rxes) { // turn strings to regexes within the array
-            filter(rxes);
-            len = rxes.length;
-            for (i = 0; i < len; i += 1) {
-              rxes[i] = new RegExp(
-                rxes[i].replace(/\//g, '')
-              , 'g');
-            }
-            indices = getIndices(rxes, selectr);
-          }
-
-          if (indices) { // make regex for narrowing
-            // filter(indices);
-            filter(nodes);
-            len = nodes.length;
-            ndc_len = indices.length;
-
-            // we need access to all the indices to assemble
-            // the selector and establish the depth of our array
-            for (ndc_i = 0; ndc_i < ndc_len; ndc_i += 1) {
-              // each member is itself an array ...
-              narrow_rx = makeNarrowRx(nodes, indices[ndc_i]);
-            }
-          }
-        } // end parseRegexMatches
-
-        function collect (prop_array, selector) {
-          var i,
-              len = prop_array.length,
-              j,
-              j_len,
-              members,
-              member_buffer = [],
-              new_members,
-              val,
-              fd_scope = fd_buffer;
-
-          function initializeArray (sel, prop) {
-            var i,
-                len = bW(sel).length;
-
-            fd_scope[prop] = fd_scope[prop] || [];
-
-            for (i = 0; i < len; i += 1) {
-              fd_scope[prop].push({});
-            }
-            return fd_scope[prop];
-          } // end initializeArray
-
-          function populate (prop, val) {
-            var i,
-                len;
-
-            if (Array.isArray(fd_scope)) {
-              len = fd_scope.length;
-
-              for (i = 0; i < len; i += 1) {
-                fd_scope[i][prop] = val;
-              }
-            }
-            else if (!Array.isArray(fd_scope[prop])) {
-              fd_scope[prop] = val;
-            }
-          } // end populate
-
-          function mergeArrays (a, container) {
-            var i,
-                len = a.length;
-            
-            for (i = 0; i < len; i += 1) {
-              if (!Array.isArray(a[i])) {
-                container.push(a[i]);
-              }
-              else {
-                mergeArrays(a[i], container);
-              }
-            }
-          } // end mergeArrays
+            store(nodes, indices);
+          } // end sort
 
           for (i = 0; i < len; i += 1) {
-            // multiple values, unknown quantity
-            if (/##/.test(prop_array[(i + 1)])) {
-              // operating on a single node
-              if (!Array.isArray(fd_scope[prop_array[i]]) &&
-                  !Array.isArray(fd_scope)) {
-                initializeArray(selector, prop_array[i]);
-              }
-              // operating on multiple nodes
-              else if (Array.isArray(fd_scope)) {
-                new_members = [];
-                member_buffer = [];
-                members = fd_scope;
-                j_len = members.length;
-                for (j = 0; j < j_len; j += 1) {
-                  fd_scope = members[j];
-                  // initialize multiple nodes
-                  if (!fd_scope[prop_array[i]] ||
-                      fd_scope[prop_array[i]].length < bW(selector).length) {
-                    member_buffer.push(initializeArray(selector, prop_array[i]));
-                  }
-                  // corral multiple nodes
-                  else {
-                    member_buffer.push(fd_scope[prop_array[i]]);
-                  }
-                }
-                mergeArrays(member_buffer, new_members);
-                fd_scope = new_members;
-                continue;
-              }
-              fd_scope = fd_scope[prop_array[i]];
-            }
-            else {
-              // a single value
-              if (prop_array[i] != '##') {
-                if (typeof fd_scope[prop_array[i]] != 'object') {
-                  val = (i === (len - 1)) ? bW(key).val() : {};
-                }
-                populate(prop_array[i], val);
-                if (typeof val === 'object') {
-                  fd_scope = fd_scope[prop_array[i]];
-                }
-              }
-            }
+            // TODO: Documentation should strongly encourage 
+            // that each field has a name
+            sort(selected[i].name);
           }
+
         } // end collect
 
-        for (key in c) {
-          if (typeof c[key] != 'string') {
-            throw new Error('The value for key ' + key + ' in the collector object must be a string');
-          }
-          else {
-            props = c[key].split(/\.|\[|\]/);
-          }
-          filter(props);
-
-          parseRegexMatches(key, c[key]);
-          collect(props, key, c[key]);
+        for (i = 0; i < len; i += 1) {
+          collect(c[i]);
         }
 
         bW.copyProperties(fd_buffer, instance.formData);
-        console.log(instance.formData);
       } // end bWF.collectValues
 
 
