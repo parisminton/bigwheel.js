@@ -113,18 +113,18 @@
         } // end drillDown
 
         // an inefficient last resort for when the attribute selector is not scoped
-        function scanAllAttributes (attr) {
-          var body = document.getElementsByTagName('body')[0],
+        function scanAllAttributes (attr, start_node) {
+          var start_node = start_node || document.getElementsByTagName('html')[0],
               collection = [];
 
           function testForAttribute (node) {
             var j,
                 len;
 
-            if (node.nodeType === 1 && node.hasAttribute(attr)) {
+            if (/1|9/.test(node.nodeType) && node.hasAttribute(attr)) {
               collection.push(node);
             }
-            if (node.nodeType === 1 && node.hasChildNodes()) {
+            if (/1|9/.test(node.nodeType) && node.hasChildNodes()) {
               j = 0;
               len = node.childNodes.length;
 
@@ -134,29 +134,41 @@
             }
           }
 
-          testForAttribute(body);
+          // the document node doesn't have the hasAttribute method
+          if (start_node === document) {
+            start_node = document.getElementsByTagName('html')[0];
+          }
+
+          testForAttribute(start_node);
 
           return list = collection;
         } // end scanAllAttributes
 
-        function testAttribute (list) {
+        function findAttribute (list) {
           var i,
-              len = list.length;
+              len = list.length,
+              node_container = [];
 
-          if (list[0] === document && len === 1) {
-            list = scanAllAttributes(filter);
+          if (getter === 'drillForAttribute') {
+            for (i = 0; i < len; i += 1) {
+              list = scanAllAttributes(filter, list[i]);
+              node_container = node_container.concat(list);
+            }
+            list = node_container;
+          }
+          else if (getter === 'testForAttribute') {
           }
 
           len = list.length;
 
           for (i = 0; i < len; i += 1) {
-            if (list[i][getter]) {
-              if (list[i][getter](filter)) {
+            if (list[i].hasAttribute) {
+              if (list[i].hasAttribute(filter)) {
                 filtered_nodes.push(list[i]);
               }
             }
           }
-        } // end testAttribute
+        } // end findAttribute
 
         function matchAttribute (list) {
           var i,
@@ -268,8 +280,8 @@
         if (/className|id/.test(getter)) {
           matchSpecifier(list);
         }
-        else if (/hasAttribute/.test(getter)) {
-          testAttribute(list);
+        else if (/drillForAttribute|testForAttribute/.test(getter)) {
+          findAttribute(list);
         }
         else if (/matchAttribute/.test(getter)) {
           matchAttribute(list);
@@ -293,7 +305,7 @@
             retained_scope = scope;
 
         function select (s) {
-          var tokens = s.match(/[a-zA-Z0-9_-]\.[a-zA-Z0-9_-]|\s+\.|^\.|[a-zA-Z0-9_-]#[a-zA-Z0-9_-]|\s+#|^#|\s+|\.|[a-zA-Z0-9_-]\[[a-zA-Z0-9_-]|\s+\[|^\[|[\|\*\^\$\~\!]?=["']/g) || [],
+          var tokens = s.match(/[a-zA-Z0-9_-]\.[a-zA-Z0-9_-]|\s+\.|^\.|[a-zA-Z0-9_-]#[a-zA-Z0-9_-]|\s+#|^#|[a-zA-Z0-9_-]\[[a-zA-Z0-9_-]|\s+\[|^\[|[\|\*\^\$\~\!]?=["']|\s+|\./g) || [],
               flags = s.split(/\s+|\.|#|\[|[\|\*\^\$\~\!]?=["']|["']?\]/g) || [],
               attr,
               filtered = [],
@@ -336,9 +348,14 @@
               getter = 'id';
             }
 
-            if (/\[/.test(tokens[i])) {
+            if (/\s+\[|^\[/.test(tokens[i])) {
               attr = flags[i];
-              getter = 'hasAttribute';
+              getter = 'drillForAttribute';
+            }
+            
+            if (/[a-zA-Z0-9_-]\[[a-zA-Z0-9_-]/.test(tokens[i])) {
+              attr = flags[i];
+              getter = 'testForAttribute';
             }
             
             if (/[\|\*\^\$\~\!]?=/.test(tokens[i])) {
@@ -1122,9 +1139,10 @@
       } // end bWF.sendData
 
       f.submitHandler = function (evt) {
+        console.log('The one that you need.');
         evt.preventDefault();
-        collectValues();
-        areFieldsEmpty();
+        f.collectValues();
+        f.areFieldsEmpty();
         /*
         if (f.readyToSubmitForm()) {
           f.sendData();
