@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*8/17/16*
+
+- Get rid of `bWF.addCollector()`.
+
+
 *8/7/16*
 
 - Attribute selectors work when scoped.

@@ -969,26 +969,6 @@
         if (instance.fields[name]) { return instance.fields[name].value; }
       } // end bWF.val
 
-      f.addCollector = function (callback, cbname) {
-        var rx = /^function ([a-zA-Z_-]+)\(.*\)/,
-            fname;
-
-        if (!cbname) {
-          if (rx.test(callback)) {
-            fname = rx.exec(callback)[1];
-          }
-          else {
-            throw new Error('BigwheelForm.addCollector was passed an anonymous function, but no name was passed.\n\nPlease pass a named function as its first argument or an additional name string as its second argument.');
-          }
-        }
-        else {
-          fname = cbname;
-        }
-
-        instance.collectors[fname] = callback;
-        return instance;
-      } // end bWF.addCollector
-
       f.collectValues = function (c) {
         var i,
             len = c.length,
@@ -1055,7 +1035,7 @@
                   }
                 } // end if (n_len)
               } // end for loop 
-            } // end function store
+            } // end store
 
             store(nodes, indices);
           } // end sort
