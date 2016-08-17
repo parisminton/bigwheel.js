@@ -942,7 +942,13 @@
           fields.splice(i, 1);
         }
         else {
-          instance.fields[fields[i].name] = fields[i];
+          if (!fields[i].name) {
+            console.error(fields[i]);
+            throw new Error('^^^ A "name" property is required for each input element within the "bW-form-' + class_suffix + '" form.');
+          }
+          else {
+            instance.fields[fields[i].name] = fields[i];
+          }
         }
       }
       
