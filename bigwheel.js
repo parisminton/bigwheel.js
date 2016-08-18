@@ -408,7 +408,9 @@
         selectFromString(selectr);
       }
       else if (/HTML/.test(selectr.constructor.toString())) {
-        if (!selectr.length) { selectr = [selectr] };
+        if (!selectr.length || 
+            // HTML select elements have a length property
+            /HTMLSelectElement/.test(selectr.constructor.toString())) { selectr = [selectr] };
         scope = selectr;
       }
 
@@ -911,11 +913,12 @@
 
       function areFieldsEmpty () {
         var i,
-            empty = false;
+            empty = false,
+            req = instance.required_fields;
 
-        for (i = 0; i < instance.required_fields.length; i += 1) {
-          if (instance.required_fields[i].value === '') {
-            bruiseField(instance.required_fields[i]);
+        for (i = 0; i < req.length; i += 1) {
+          if (req[i].value === '') {
+            bruiseField(req[i]);
             empty = true;
           }
         }
@@ -975,10 +978,8 @@
         if (instance.fields[name]) { return instance.fields[name].value; }
       } // end bWF.val
 
-      f.collectValues = function (c) {
-        var i,
-            len = c.length,
-            fd_buffer = {};
+      f.collectValues = function () {
+        var fd_buffer = {};
 
         // remove empties from Array.split
         function filter (pa) {
@@ -1054,8 +1055,8 @@
 
         } // end collect
 
-        for (i = 0; i < len; i += 1) {
-          collect(c[i]);
+        for (var name in instance.fields) {
+          collect(instance.fields[name]);
         }
 
         bW.copyProperties(fd_buffer, instance.formData);
@@ -1125,10 +1126,8 @@
       } // end bWF.sendData
 
       f.submitHandler = function (evt) {
-        console.log('The one that you need.');
         evt.preventDefault();
         f.collectValues();
-        f.areFieldsEmpty();
         /*
         if (f.readyToSubmitForm()) {
           f.sendData();

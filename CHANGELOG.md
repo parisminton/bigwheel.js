@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*8/18/16*
+
+- Fix for selecting `select` elements via a DOM reference.
+
+
 *8/17/16*
 
 - Get rid of `bWF.addCollector()`.
