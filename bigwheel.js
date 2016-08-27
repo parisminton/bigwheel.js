@@ -942,7 +942,7 @@
       for (i = 0; i < fields.length; i += 1) {
         // exclude the submit button
         if (fields[i] === instance.submit) {
-          fields.splice(i, 1);
+          continue
         }
         else {
           if (!fields[i].name) {
