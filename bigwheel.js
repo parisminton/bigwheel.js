@@ -529,6 +529,7 @@
       }
     } // end bW.copyProperties
 
+    // would JSON.stringify handle this?
     bW.parameterize = function (obj) {
       var params = [],
           current,
@@ -893,14 +894,14 @@
           fclass,
           fields = selectElements('input, textarea, select'),
           prop,
-          i;
+          i,
+          registry;
 
       instance[0] = instance.form = form_element;
       instance.submit = submit_button;
       instance.length = 1;
       instance.fields = {};
       instance.required_fields = [];
-      instance.collectors = {};
       instance.formData = {};
 
       // ### bWF HELPERS  ###
@@ -942,7 +943,7 @@
       for (i = 0; i < fields.length; i += 1) {
         // exclude the submit button
         if (fields[i] === instance.submit) {
-          continue
+          continue;
         }
         else {
           if (!fields[i].name) {
@@ -1139,7 +1140,8 @@
       }
       // ### end BigwheelForm prototype ###
 
-      bW(instance.submit).listenFor('click', instance.submitHandler, true);
+      registry = bW(instance.submit).listenFor('click', instance.submitHandler, true).event_registry;
+      instance.registry = registry;
     } // end BigwheelForm constructor
 
     return new Bigwheel(selectElements(selector));
