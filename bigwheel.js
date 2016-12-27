@@ -13,6 +13,64 @@
 
     bW.forms = bW.forms || [];
 
+    bW.uniq = function (list) {
+      var i,
+          len = list.length,
+          j,
+          j_len,
+          uniques = [],
+          is_unique;
+
+      function compare (l_val, u_val) {
+        var i,
+            len;
+            
+        if (/string|number|boolean/.test(typeof l_val) ||
+            /HTML|Node/.test(l_val.constructor.toString())) {
+          if (l_val === u_val) {
+            is_unique = false;
+          }
+        }
+        else if (Array.isArray(l_val)) {
+          len = l_val.length;
+          if (Array.isArray(u_val)) {
+            for (i = 0; i < len; i += 1) {
+              if (l_val[i] != u_val[i]) { break };
+              // if we reach the end of the loop and all values
+              // have been identical in the same sequence,
+              // this array is not unique
+              if (i === (len - 1)) {
+                is_unique = false;
+              }
+            } // end array comparison loop
+          }
+        }
+        else if (/Object/.test(l_val.constructor.toString())) {
+          if (JSON.stringify(l_val) === JSON.stringify(u_val)) {
+            is_unique = false;
+          }
+        }
+        return is_unique;
+      } // end compare
+
+      for (i = 0; i < len; i += 1) {
+        is_unique = true;
+        if (i === 0) {
+          uniques.push(list[i]);
+        }
+        j_len = uniques.length;
+        for (j = 0; j < j_len; j += 1) {
+          compare(list[i], uniques[j]);
+          if (!is_unique) { break };
+        }
+        if (is_unique) {
+          uniques.push(list[i]);
+        }
+      }
+      return uniques;
+    } // end bW.uniq
+
+
     // ### bW selector engine and constructor ###
     function selectElements (selectr, scope) {
       var getter;
@@ -24,22 +82,6 @@
             len = list.length,
             nodes,
             filtered_nodes = []; 
-
-        function storeUniques (list) {
-          var i,
-              len = list.length,
-              uniques = [];
-
-          for (i = 0; i < len; i += 1) {
-            if (uniques.some(function (u) {
-                return u === list[i];
-              })) {
-              continue;
-            }
-            uniques.push(list[i]);
-          }
-          return uniques;
-        } // end storeUniques
 
         function parseNodes (list) {
           var i,
@@ -71,18 +113,18 @@
         } // end drillDown
 
         // an inefficient last resort for when the attribute selector is not scoped
-        function scanAllAttributes (attr) {
-          var body = document.getElementsByTagName('body')[0],
+        function scanAllAttributes (attr, start_node) {
+          var start_node = start_node || document.getElementsByTagName('html')[0],
               collection = [];
 
           function testForAttribute (node) {
             var j,
                 len;
 
-            if (node.nodeType === 1 && node.hasAttribute(attr)) {
+            if (/1|9/.test(node.nodeType) && node.hasAttribute(attr)) {
               collection.push(node);
             }
-            if (node.nodeType === 1 && node.hasChildNodes()) {
+            if (/1|9/.test(node.nodeType) && node.hasChildNodes()) {
               j = 0;
               len = node.childNodes.length;
 
@@ -92,29 +134,41 @@
             }
           }
 
-          testForAttribute(body);
+          // the document node doesn't have the hasAttribute method
+          if (start_node === document) {
+            start_node = document.getElementsByTagName('html')[0];
+          }
+
+          testForAttribute(start_node);
 
           return list = collection;
         } // end scanAllAttributes
 
-        function testAttribute (list) {
+        function findAttribute (list) {
           var i,
-              len = list.length;
+              len = list.length,
+              node_container = [];
 
-          if (list[0] === document && len === 1) {
-            list = scanAllAttributes(filter);
+          if (getter === 'drillForAttribute') {
+            for (i = 0; i < len; i += 1) {
+              list = scanAllAttributes(filter, list[i]);
+              node_container = node_container.concat(list);
+            }
+            list = node_container;
+          }
+          else if (getter === 'testForAttribute') {
           }
 
           len = list.length;
 
           for (i = 0; i < len; i += 1) {
-            if (list[i][getter]) {
-              if (list[i][getter](filter)) {
+            if (list[i].hasAttribute) {
+              if (list[i].hasAttribute(filter)) {
                 filtered_nodes.push(list[i]);
               }
             }
           }
-        } // end testAttribute
+        } // end findAttribute
 
         function matchAttribute (list) {
           var i,
@@ -159,7 +213,7 @@
             }
           }
           
-          patterns = storeUniques(patterns);
+          patterns = bW.uniq(patterns);
           p_len = patterns.length;
 
           for (i = 0; i < p_len; i += 1) {
@@ -226,8 +280,8 @@
         if (/className|id/.test(getter)) {
           matchSpecifier(list);
         }
-        else if (/hasAttribute/.test(getter)) {
-          testAttribute(list);
+        else if (/drillForAttribute|testForAttribute/.test(getter)) {
+          findAttribute(list);
         }
         else if (/matchAttribute/.test(getter)) {
           matchAttribute(list);
@@ -239,7 +293,7 @@
           drillDown(list);
         }
 
-        scope = storeUniques(filtered_nodes);
+        scope = bW.uniq(filtered_nodes);
         return scope;
       } // end filterHTMLCollection
 
@@ -251,7 +305,7 @@
             retained_scope = scope;
 
         function select (s) {
-          var tokens = s.match(/[a-zA-Z0-9_-]\.[a-zA-Z0-9_-]|\s+\.|^\.|[a-zA-Z0-9_-]#[a-zA-Z0-9_-]|\s+#|^#|\s+|\.|[a-zA-Z0-9_-]\[[a-zA-Z0-9_-]|\s+\[|^\[|[\|\*\^\$\~\!]?=["']/g) || [],
+          var tokens = s.match(/[a-zA-Z0-9_-]\.[a-zA-Z0-9_-]|\s+\.|^\.|[a-zA-Z0-9_-]#[a-zA-Z0-9_-]|\s+#|^#|[a-zA-Z0-9_-]\[[a-zA-Z0-9_-]|\s+\[|^\[|[\|\*\^\$\~\!]?=["']|\s+|\./g) || [],
               flags = s.split(/\s+|\.|#|\[|[\|\*\^\$\~\!]?=["']|["']?\]/g) || [],
               attr,
               filtered = [],
@@ -294,9 +348,14 @@
               getter = 'id';
             }
 
-            if (/\[/.test(tokens[i])) {
+            if (/\s+\[|^\[/.test(tokens[i])) {
               attr = flags[i];
-              getter = 'hasAttribute';
+              getter = 'drillForAttribute';
+            }
+            
+            if (/[a-zA-Z0-9_-]\[[a-zA-Z0-9_-]/.test(tokens[i])) {
+              attr = flags[i];
+              getter = 'testForAttribute';
             }
             
             if (/[\|\*\^\$\~\!]?=/.test(tokens[i])) {
@@ -313,7 +372,7 @@
                 attr = 'id';
               }
               else {
-                throw new Error('Regular expressions can only be used with a class or ID selector -- strings that begin with a period (.) or pound sign (#).');
+                throw new Error('Bigwheel can only perform regular expression matches using a class or ID selector -- strings that contain a period (.) or pound sign (#).');
               }
             }
 
@@ -349,7 +408,9 @@
         selectFromString(selectr);
       }
       else if (/HTML/.test(selectr.constructor.toString())) {
-        if (!selectr.length) { selectr = [selectr] };
+        if (!selectr.length || 
+            // HTML select elements have a length property
+            /HTMLSelectElement/.test(selectr.constructor.toString())) { selectr = [selectr] };
         scope = selectr;
       }
 
@@ -450,37 +511,50 @@
       return args;
     } // end parseArray
 
-    function copyProperties (donor, recipient) {
+    bW.copyProperties = function (donor, recipient) {
       var key;
 
       for (key in donor) {
         if (Array.isArray(donor[key])) {
           recipient[key] = [];
-          copyProperties(donor[key], recipient[key]);
+          bW.copyProperties(donor[key], recipient[key]);
         }
         else if (typeof donor[key] === 'object') {
           recipient[key] = {};
-          copyProperties(donor[key], recipient[key]);
+          bW.copyProperties(donor[key], recipient[key]);
         }
         else {
           recipient[key] = donor[key];
         }
       }
-    } // end copyProperties
+    } // end bW.copyProperties
 
-    function parameterize (obj) {
+    // would JSON.stringify handle this?
+    // no, it doesn't.
+    bW.parameterize = function (obj) {
       var params = [],
           current,
-          key;
+          key,
+          dimension;
 
-      for (key in obj) {
-        current = params.length;
-        params[current] = encodeURIComponent(key) + '=' + encodeURIComponent(obj[key]);
-        console.log(params[current]);
-      }
+      function parse (ob, dim) {
+        for (key in ob) {
+          dimension = (dim) ? dim + '[' + key + ']' : key;
+
+          if (typeof ob[key] === 'object') {
+            parse(ob[key], dimension);
+            continue;
+          }
+
+          current = params.length;
+          params[current] = encodeURIComponent(dimension) + '=' + encodeURIComponent(ob[key]);
+        }
+      } // end parse
+
+      parse(obj);
       return '?' + params.join('&');
 
-    } // end parameterize
+    } // end bW.parameterize
 
     function Bigwheel (elements) {
       var instance = this,
@@ -609,43 +683,72 @@
         function listen (elem, evt, func, capt, aargs) {
           var instance = this;
 
-          function add () {
-            // W3C-compliant browsers
-            if (elem.addEventListener) {
-              if (!instance.listener_model) { instance.listener_model = 'addEventListener'; }
-              elem.addEventListener(evt, func, capt);
-            }
-            // IE pre-9
-            else {
-              if (elem.attachEvent) { 
-                if (!instance.listener_model) { instance.listener_model = 'attachEvent'; }
-                elem.attachEvent(('on' + evt), func);
-              }
-              // fall back to DOM level 0
-              else { 
-                if (!instance.listener_model) { instance.listener_model = 'onevent'; }
-                elem['on' + evt] = func;
-              }
-            }
-          } // end add
-
           // store these values in a registry, so we can retrieve them
           function register () {
-            var rx = /function ([a-zA-Z-_]*)\(/;
+            var er = instance.event_registry,
+                count = 0,
+                queued_func;
+
+            function add (f) {
+              // W3C-compliant browsers
+              if (elem.addEventListener) {
+                if (!instance.listener_model) { instance.listener_model = 'addEventListener'; }
+                elem.addEventListener(evt, f, capt);
+              }
+              // IE pre-9
+              else {
+                if (elem.attachEvent) { 
+                  if (!instance.listener_model) { instance.listener_model = 'attachEvent'; }
+                  elem.attachEvent(('on' + evt), f);
+                }
+                // fall back to DOM level 0
+                else { 
+                  if (!instance.listener_model) { instance.listener_model = 'onevent'; }
+                  elem['on' + evt] = f;
+                }
+              }
+            } // end add
 
             // ### more valuable for the key to be a unique ID or the event type string?
-            instance.event_registry[elem.ndx] = {};
-            instance.event_registry[elem.ndx][evt] = {
+            er[elem.ndx] = er[elem.ndx] || {};
+            er[elem.ndx][evt] = er[elem.ndx][evt] || {
               elem : elem,
               evt : evt,
               func : func,
+              handler_queue : [],
               capt : capt,
               aargs : aargs
             };
-            instance.event_registry.length += 1;
+
+            if (er[elem.ndx][evt].handler_queue.length >= 1) {
+              er[elem.ndx][evt].handler_queue.push(func);
+            }
+            else {
+              er[elem.ndx][evt].handler_queue = [func];
+            }
+
+            // number of registered events is the length
+            for (e in er[elem.ndx]) {
+              count += 1;
+            }
+            er.length = count;
+
+            queued_func = (function (func_array) {
+              return function (evt) {
+                var i,
+                    len = func_array.length;
+
+                for (i = 0; i < len; i += 1) {
+                  if (typeof func_array[i] === 'function') {
+                    func_array[i](evt);
+                  }
+                }
+              }
+            }(er[elem.ndx][evt].handler_queue)) // end queuedFunc
+
+            add(queued_func);
           } // end register
 
-          add();
           register();
         } // end listen
 
@@ -824,47 +927,7 @@
         return form_obj;
       }, // end bW.setForm
 
-      ajax : function (url, ajaxSettings) {
-        var bWXHR = {
-          done : function (func) {
-                   if (func) { func(); }
-                 },
-          fail : function (func) {},
-          always : function (func) {},
-          then : function (func) {},
-          init : function () {
-            this.xhr = new XMLHttpRequest(sttngs);
-          }
-        },
-        settings = {
-          type : 'GET'
-        };
-
-        if (ajaxSettings && typeof ajaxSettings === 'object') {
-          copyProperties(ajaxSettings, settings);
-        }
-
-        if (typeof url === 'object') {
-          copyProperties(url, settings);
-        }
-
-        // the first argument here will trump any URL 
-        // specified in ajaxSettings
-        if (typeof url === 'string') {
-          /* ### TODO: Should this be sanitized? ### */
-          settings.url = url;
-        }
-
-        // bW.ajax({
-        //   type : 'POST',
-        //   url : 'http://somethingorother.com',
-        //   data : data_var,
-        //   success : functionThatConfirmsDataWasSaved,
-        //   error : functionThatExplainsTheError
-        // });
-        
-        return bWXHR;
-      } // end bW.ajax
+      ajax : ajaxFunc,
 
     } // end Bigwheel prototype
 
@@ -880,7 +943,6 @@
       instance.length = 1;
       instance.fields = {};
       instance.required_fields = [];
-      instance.collectors = {};
       instance.formData = {};
 
       // ### bWF HELPERS  ###
@@ -893,11 +955,12 @@
 
       function areFieldsEmpty () {
         var i,
-            empty = false;
+            empty = false,
+            req = instance.required_fields;
 
-        for (i = 0; i < instance.required_fields.length; i += 1) {
-          if (instance.required_fields[i].value === '') {
-            bruiseField(instance.required_fields[i]);
+        for (i = 0; i < req.length; i += 1) {
+          if (req[i].value === '') {
+            bruiseField(req[i]);
             empty = true;
           }
         }
@@ -921,10 +984,16 @@
       for (i = 0; i < fields.length; i += 1) {
         // exclude the submit button
         if (fields[i] === instance.submit) {
-          fields.splice(i, 1);
+          continue;
         }
         else {
-          instance.fields[fields[i].name] = fields[i];
+          if (!fields[i].name) {
+            console.error(fields[i]);
+            throw new Error('^^^ A "name" property is required for each input element within the "bW-form-' + class_suffix + '" form.');
+          }
+          else {
+            instance.fields[fields[i].name] = fields[i];
+          }
         }
       }
       
@@ -951,29 +1020,8 @@
         if (instance.fields[name]) { return instance.fields[name].value; }
       } // end bWF.val
 
-      f.addCollector = function (callback, cbname) {
-        var rx = /^function ([a-zA-Z_-]+)\(.*\)/,
-            fname;
-
-        if (!cbname) {
-          if (rx.test(callback)) {
-            fname = rx.exec(callback)[1];
-          }
-          else {
-            throw new Error('BigwheelForm.addCollector was passed anonymous function, but no name was passed.\n\nPlease pass a named function as its first argument or an additional name string as its second argument.');
-          }
-        }
-        else {
-          fname = cbname;
-        }
-
-        instance.collectors[fname] = callback;
-        return instance;
-      } // end bWF.addCollector
-
-      f.collectValues = function (c) {
-        var props,
-            fd_buffer = {};
+      f.collectValues = function () {
+        var fd_buffer = {};
 
         // remove empties from Array.split
         function filter (pa) {
@@ -989,120 +1037,72 @@
           }
         } // end filter
 
-        function collect (prop_array, selector) {
-          var i,
-              len = prop_array.length,
-              j,
-              j_len,
-              members,
-              member_buffer = [],
-              new_members,
-              val,
-              fd_scope = fd_buffer;
+        function collect (selector) {
+          var selected = bW(selector),
+              i,
+              len = selected.length;
 
-          function initializeArray (sel, prop) {
-            var i,
-                len = bW(sel).length;
+          function sort (selectr) {
+            var nodes = selectr.split(/\d+_+/),
+                indices = getIndices(selectr),
+                scope,
+                n_len;
 
-            fd_scope[prop] = fd_scope[prop] || [];
+            n_len = nodes.length;
 
-            for (i = 0; i < len; i += 1) {
-              fd_scope[prop].push({});
-            }
-            return fd_scope[prop];
-          } // end initializeArray
+            function getIndices (selectr) {
+              var indices = [],
+                  rx = /(\d+)_/g,
+                  match;
 
-          function populate (prop, val) {
-            var i,
-                len;
-
-            if (Array.isArray(fd_scope)) {
-              len = fd_scope.length;
-
-              for (i = 0; i < len; i += 1) {
-                fd_scope[i][prop] = val;
+              while ((match = rx.exec(selectr)) != null) {
+                indices.push(match[1]);
               }
-            }
-            else if (!Array.isArray(fd_scope[prop])) {
-              fd_scope[prop] = val;
-            }
-          } // end populate
+              return (indices.length) ? indices : false;
+            } // end getIndices
 
-          function mergeArrays (a, container) {
-            var i,
-                len = a.length;
-            
-            for (i = 0; i < len; i += 1) {
-              if (!Array.isArray(a[i])) {
-                container.push(a[i]);
-              }
-              else {
-                mergeArrays(a[i], container);
-              }
-            }
-          } // end mergeArrays
+            function store (nodez, indicez) {
+              var n,
+                  n_len = nodez.length,
+                  fscope = fd_buffer;
+
+              // drill as deep as necessary for this loop,
+              // but always start it from top-level fd_buffer
+              for (n = 0; n < n_len; n += 1) {
+                if (nodez[n]) {
+                  // no index; we expect this to be a flat node
+                  if (indicez[n] === undefined) {
+                    // fscope[nodez[n]] = bW('#' + selectr).val();
+                    fscope[nodez[n]] = document.querySelector('[name="' + selectr + '"]').value;
+                  }
+                  else {
+                    // initialize the array
+                    fscope[nodez[n]] = fscope[nodez[n]] || [];
+                    fscope[nodez[n]][indicez[n]] = 
+                      fscope[nodez[n]][indicez[n]] || {};
+                    fscope = fscope[nodez[n]][indicez[n]];
+                  }
+                } // end if (n_len)
+              } // end for loop 
+            } // end store
+
+            store(nodes, indices);
+          } // end sort
 
           for (i = 0; i < len; i += 1) {
-            // multiple values, unknown quantity
-            if (/##/.test(prop_array[(i + 1)])) {
-              // operating on a single node
-              if (!Array.isArray(fd_scope[prop_array[i]]) &&
-                  !Array.isArray(fd_scope)) {
-                initializeArray(selector, prop_array[i]);
-              }
-              // operating on multiple nodes
-              else if (Array.isArray(fd_scope)) {
-                new_members = [];
-                member_buffer = [];
-                members = fd_scope;
-                j_len = members.length;
-                for (j = 0; j < j_len; j += 1) {
-                  fd_scope = members[j];
-                  // initialize multiple nodes
-                  if (!fd_scope[prop_array[i]] ||
-                      fd_scope[prop_array[i]].length < bW(selector).length) {
-                    member_buffer.push(initializeArray(selector, prop_array[i]));
-                  }
-                  // corral multiple nodes
-                  else {
-                    member_buffer.push(fd_scope[prop_array[i]]);
-                  }
-                }
-                mergeArrays(member_buffer, new_members);
-                fd_scope = new_members;
-                continue;
-              }
-              fd_scope = fd_scope[prop_array[i]];
-            }
-            else {
-              // a single value
-              if (prop_array[i] != '##') {
-                if (typeof fd_scope[prop_array[i]] != 'object') {
-                  val = (i === (len - 1)) ? bW(key).val() : {};
-                }
-                populate(prop_array[i], val);
-                if (typeof val === 'object') {
-                  fd_scope = fd_scope[prop_array[i]];
-                }
-              }
-            }
+            // TODO: Documentation should strongly encourage 
+            // that each field has a name
+            sort(selected[i].name);
           }
+
         } // end collect
 
-        for (key in c) {
-          if (typeof c[key] != 'string') {
-            throw new Error('The value for key ' + key + ' in the collector object must be a string');
-          }
-          else {
-            props = c[key].split(/\.|\[|\]/);
-          }
-          filter(props);
-
-          collect(props, key, c[key]);
+        for (var name in instance.fields) {
+          collect(instance.fields[name]);
         }
 
-        copyProperties(fd_buffer, instance.formData);
-      } // end collectValues
+        bW.copyProperties(fd_buffer, instance.formData);
+      } // end bWF.collectValues
 
 
       f.addToTests = function (test) {
@@ -1144,14 +1144,10 @@
       } // end readyToSubmitForm
 
       f.sendData = function () {
-        f.collectValuesAsJSON();
-        f.collectImagesAsJSON();
-        f.collectLocationDescriptionsAsJSON();
-
         ajaxOpts = {
           type: 'POST',
-          url: url_goes_here,
-          data: f.formData,
+          url: 'update',
+          data: instance.formData,
           success: function (data) {
             f.showThanks();
           },
@@ -1169,8 +1165,9 @@
 
       f.submitHandler = function (evt) {
         evt.preventDefault();
-        collectValues();
-        areFieldsEmpty();
+        f.collectValues();
+        console.log(instance.formData);
+        f.sendData();
         /*
         if (f.readyToSubmitForm()) {
           f.sendData();
@@ -1187,8 +1184,115 @@
 
     return new Bigwheel(selectElements(selector));
 
-  }; // end bW selector engine and constructor
+  }, // end bW selector engine and constructor
+      
+  ajaxFunc = function (url, ajaxSettings) {
+    var bWXHR = function () {
+      this.xhr = new XMLHttpRequest();
+      this.setup = function (s) {
+        var dataTypes = {
+          json : 'application/json',
+          xml : 'application/xml', 
+          html : 'text/html',
+          text : 'text/plain',
+          script : 'text/javascript'
+          // jsonp : create a new <script> tag
+        };
 
+        if (s.dataType) {
+          this.xhr.setRequestHeader('Accept', dataTypes[s.dataType]);
+        }
+      },
+      this.done = function (func) {
+        console.log('We must be in love.');
+        console.log(this);
+        if (typeof func === 'string') {
+          console.log(func);
+        }
+        // if (func) { func(); }
+      },
+      this.fail = function (func) {},
+      this.always = function (func) {},
+      this.then = function (func) {}
+    },
+    settings = {
+      method : 'get',
+      async : true
+    },
+    query_params = '',
+    bX;
+
+    if (ajaxSettings && typeof ajaxSettings === 'object') {
+      bW.copyProperties(ajaxSettings, settings);
+    }
+
+    if (typeof url === 'object') {
+      bW.copyProperties(url, settings);
+    }
+
+    // the first argument here will trump any URL 
+    // specified in ajaxSettings
+    if (typeof url === 'string') {
+      /* ### TODO: Should this be sanitized? ### */
+      settings.url = url;
+    }
+    /* ### BELOW THIS POINT, ajaxSettings HAS BEEN MAPPED TO settings ### */
+
+    // prepare the URL -- concatenate base and query parameters
+    if (settings.data && typeof settings.data === 'object') {
+      query_params = bW.parameterize(settings.data);
+      settings.purl = settings.url + query_params; 
+    }
+
+    if (typeof settings.success != 'function') {
+      // raise error
+    }
+
+    bX = new bWXHR();
+
+    function bWXHRError(message) {
+      this.message = message || 'Something went wrong with your AJAX request.';
+      this.name = 'bWXHRError';
+      this.stack = new Error().stack;
+    }
+    bWXHRError.prototype = new Error();
+    bWXHRError.constructor = Error;
+
+    // XMLHttpRequest prep and transaction
+    bX.xhr.addEventListener('load', function (data, status) {
+      if (/400/.test(bX.xhr.status)) {
+        // if there's a specialized message, show it
+        if (JSON.parse(bX.xhr.responseText).error) {
+          throw new bWXHRError(JSON.parse(bX.xhr.responseText).error);
+        }
+      }
+      else {
+        settings.success(bX.xhr.responseText, bX.xhr.statusText);
+      }
+      return bX;
+    });
+    bX.xhr.addEventListener('error', function (error, status) {
+      settings.error(bX.xhr);
+      return bX;
+    });
+    bX.xhr.open(settings.method, settings.purl, settings.async);
+    // modifying headers, etc. has to happen after opening but before sending
+    bX.setup(settings);
+    bX.xhr.send();
+
+    // bW.ajax({
+    //   type : 'POST',
+    //   url : 'http://somethingorother.com',
+    //   data : data_var,
+    //   success : functionThatConfirmsDataWasSaved,
+    //   error : functionThatExplainsTheError
+    // });
+    
+    return bX;
+  }; // end ajaxFunc
+
+  bW.ajax = ajaxFunc;
+            
   if (typeof define === 'function' && define.amd) {
     define(function () {
       return bW;
