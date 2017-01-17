@@ -815,8 +815,13 @@
       }, // end bW.after
 
       // ### METHODS THAT RETURN A VALUE from a single element, not the bW object
-      val : function () {
-        if (this[0].value) { return this[0].value; }
+      val : function (new_value) {
+        if (new_value) {
+          this[0].value = new_value;
+        }
+        else {
+          if (this[0].value) { return this[0].value; }
+        }
       }, // end bW.val
 
       data : function (selector, new_value) {
@@ -1145,8 +1150,8 @@
 
       f.sendData = function () {
         ajaxOpts = {
-          type: 'POST',
-          url: 'update',
+          method: 'POST',
+          url: '/log',
           data: instance.formData,
           success: function (data) {
             f.showThanks();
@@ -1281,7 +1286,7 @@
     bX.xhr.send();
 
     // bW.ajax({
-    //   type : 'POST',
+    //   method : 'POST',
     //   url : 'http://somethingorother.com',
     //   data : data_var,
     //   success : functionThatConfirmsDataWasSaved,

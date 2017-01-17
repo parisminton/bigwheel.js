@@ -4,6 +4,12 @@ bigwheel.js
 Changelog
 ---------
 
+
+*1/17/17*
+
+- `bW.val()` can set values, not just get them..
+
+
 *12/27/16*
 
 - `bWF.parameterize()` handles multidimensional structures.
