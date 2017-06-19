@@ -4,10 +4,15 @@ bigwheel.js
 Changelog
 ---------
 
+*6/19/17*
+
+- `bWF.setForm()` defaults to POSTing JSON, but allows old school query parameters.
+
+
 
 *1/17/17*
 
-- `bW.val()` can set values, not just get them..
+- `bW.val()` can set values, not just get them.
 
 
 *12/27/16*

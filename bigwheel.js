@@ -915,7 +915,7 @@
         return this;
       }, // end bW.not
 
-      setForm : function (submit_selector, suffix) {
+      setForm : function (submit_selector, sendJSON, suffix) {
         var form = this[0],
             submit,
             form_obj;
@@ -927,8 +927,16 @@
           submit = selectElements(submit_selector)[0];
         }
 
-        form_obj = new BigwheelForm(form, submit, suffix);
+        if (typeof sendJSON === 'boolean' || /true|false/.test(sendJSON)) {
+          form_obj = new BigwheelForm(form, submit, sendJSON, suffix);
+        }
+        else if (sendJSON) { // the caller ignored sendJSON but wants a suffix
+          suffix = sendJSON;
+          form_obj = new BigwheelForm(form, submit, suffix);
+        }
+
         form_obj.init();
+
         return form_obj;
       }, // end bW.setForm
 
@@ -936,7 +944,7 @@
 
     } // end Bigwheel prototype
 
-    function BigwheelForm (form_element, submit_button, class_suffix) {
+    function BigwheelForm (form_element, submit_button, send_as_json, class_suffix) {
       var instance = this,
           fclass,
           fields = selectElements('input, textarea, select'),
@@ -1165,6 +1173,10 @@
           }
         }
 
+        if (send_as_json != undefined && send_as_json === false) {
+          ajaxOpts.sendJSON = false;
+        }
+
         bW.ajax(ajaxOpts);
       } // end bWF.sendData
 
@@ -1222,9 +1234,10 @@
     },
     settings = {
       method : 'get',
-      async : true
+      async : true,
+      sendJSON : true
     },
-    query_params = '',
+    query = '',
     bX;
 
     if (ajaxSettings && typeof ajaxSettings === 'object') {
@@ -1243,10 +1256,14 @@
     }
     /* ### BELOW THIS POINT, ajaxSettings HAS BEEN MAPPED TO settings ### */
 
-    // prepare the URL -- concatenate base and query parameters
-    if (settings.data && typeof settings.data === 'object') {
-      query_params = bW.parameterize(settings.data);
-      settings.purl = settings.url + query_params; 
+    // no JSON -- concatenate base and query parameters key/value style
+    if (settings.data && typeof settings.data === 'object' && settings.sendJSON === false) {
+      query = bW.parameterize(settings.data);
+      settings.qurl = settings.url + query; 
+    }
+    else { // send JSON
+      query = JSON.stringify(settings.data);
+      settings.qurl = settings.url + '?' + encodeURIComponent(query); 
     }
 
     if (typeof settings.success != 'function') {
@@ -1280,8 +1297,11 @@
       settings.error(bX.xhr);
       return bX;
     });
-    bX.xhr.open(settings.method, settings.purl, settings.async);
+    bX.xhr.open(settings.method, settings.qurl, settings.async);
     // modifying headers, etc. has to happen after opening but before sending
+    if (settings.sendJSON) {
+      bX.xhr.setRequestHeader("Content-type", "application/json");
+    }
     bX.setup(settings);
     bX.xhr.send();
 
