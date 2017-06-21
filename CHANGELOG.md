@@ -4,10 +4,14 @@ bigwheel.js
 Changelog
 ---------
 
+*6/20/17*
+
+- Instances of bWXHR default to 'GET' and JSON. Better detection of the method and data type.
+
+
 *6/19/17*
 
 - `bWF.setForm()` defaults to POSTing JSON, but allows old school query parameters.
-
 
 
 *1/17/17*
