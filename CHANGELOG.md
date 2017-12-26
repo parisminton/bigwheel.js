@@ -4,6 +4,13 @@ bigwheel.js
 Changelog
 ---------
 
+*12/26/17*
+
+- Add a `bW.setAttr()` method for updating attributes.
+
+- Scope form field inspection to the form itself.
+
+
 *6/20/17*
 
 - Instances of bWXHR default to 'GET' and JSON. Better detection of the method and data type.

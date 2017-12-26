@@ -596,10 +596,10 @@
     Bigwheel.prototype = {
 
       // ### PROPERTIES
-      event_registry : { length: 0 },
+      event_registry: { length: 0 },
 
       // ### HELPERS: will probably be most useful to other bW methods, not users.
-      wrap : function (elem_refs) {
+      wrap: function (elem_refs) {
         var args_array = [],
             i;
 
@@ -612,7 +612,7 @@
         }
       }, // end bW.wrap
 
-      all : function (func, args) {
+      all: function (func, args) {
         var args_array = [],
             i,
             remove = 1;
@@ -639,7 +639,7 @@
         return this;
       }, // end bW.all
 
-      each : function (func) {
+      each: function (func) {
         var instance = this,
             i,
             len = instance.length;
@@ -651,12 +651,12 @@
         return instance;
       }, // end bW.each
 
-      first : function () {
+      first: function () {
         return this.wrap(this[0]);
       }, // end bW.first
 
       // ### METHODS THAT OPERATE ON ALL ELEMENTS IN THE SET and return the bW object
-      css : function (prop, value) {
+      css: function (prop, value) {
         if (!prop) { return this; }
 
         function setCSS (elem, prop, value) {
@@ -666,19 +666,53 @@
         return this.all(setCSS, arguments);
       }, // end bW.css
 
-      addClass : function () {
+      addClass: function () {
         var args = parseArray(arguments);
 
         return this.all(plusClass, args);
       }, // end bW.addClass
 
-      removeClass : function () {
+      removeClass: function () {
         var args = parseArray(arguments);
 
         return this.all(minusClass, args);
       }, // end bW.removeClass
 
-      listenFor : function (evt, func, capt, aargs) {
+      setAttr: function (attr, value) {
+        var args = parseArray(arguments);
+
+        function setAtt () {
+          var a = parseArray(arguments);
+
+          for (i = 1; i < a.length; i += 2) {
+            if ((a.length - 1) % 2 === 0 && a[0].setAttribute) {
+              a[0].setAttribute(a[i], a[i + 1]);
+            }
+          }
+        } // end setAtt
+
+        function setAttWithObject () {
+          var a = parseArray(arguments);
+
+          for (att in a[1]) {
+            if (a[0].setAttribute) {
+              a[0].setAttribute(att, a[1][att]);
+            }
+          }
+        } // end setAttWithObject
+
+        // one attribute, one value
+        if (typeof attr === 'string') {
+          return this.all(setAtt, args);
+        }
+
+        // an object containing one or more attribute/value pairs
+        else if (typeof attr === 'object') {
+          return this.all(setAttWithObject, args);
+        }
+      }, // end bW.setAttr
+
+      listenFor: function (evt, func, capt, aargs) {
 
         function listen (elem, evt, func, capt, aargs) {
           var instance = this;
@@ -712,12 +746,12 @@
             // ### more valuable for the key to be a unique ID or the event type string?
             er[elem.ndx] = er[elem.ndx] || {};
             er[elem.ndx][evt] = er[elem.ndx][evt] || {
-              elem : elem,
-              evt : evt,
-              func : func,
-              handler_queue : [],
-              capt : capt,
-              aargs : aargs
+              elem: elem,
+              evt: evt,
+              func: func,
+              handler_queue: [],
+              capt: capt,
+              aargs: aargs
             };
 
             if (er[elem.ndx][evt].handler_queue.length >= 1) {
@@ -755,7 +789,7 @@
         return this.all(listen, arguments);
       }, // end bW.listenFor
 
-      stopListening : function (evt, func) {
+      stopListening: function (evt, func) {
         var instance = this;
 
         function dontListen (elem, evt, func, capt) {
@@ -798,7 +832,7 @@
         return instance.all(dontListen, arguments);
       }, // end bW.stopListening
 
-      before : function (elem) {
+      before: function (elem) {
         function insert (after, elem) {
           after.parentNode.insertBefore(elem, after);
         }
@@ -806,7 +840,7 @@
         return this.all(insert, arguments);
       }, // end bW.before
 
-      after : function (elem) {
+      after: function (elem) {
         function insert (before, elem) {
           before.parentNode.insertBefore(elem, before.nextSibling);
         }
@@ -815,7 +849,7 @@
       }, // end bW.after
 
       // ### METHODS THAT RETURN A VALUE from a single element, not the bW object
-      val : function (new_value) {
+      val: function (new_value) {
         if (new_value) {
           this[0].value = new_value;
         }
@@ -824,7 +858,7 @@
         }
       }, // end bW.val
 
-      data : function (selector, new_value) {
+      data: function (selector, new_value) {
         var instance = this;
 
         function getData (slctr) {
@@ -857,7 +891,7 @@
         }
       }, // end bW.data
 
-      find : function (slctr) {
+      find: function (slctr) {
         var collection = [],
             i,
             new_scope;
@@ -870,7 +904,7 @@
         return new Bigwheel(new_scope);
       }, // end bW.find
 
-      remove : function () {
+      remove: function () {
         function removeElement (elem) {
           elem.parentNode.removeChild(elem);
         }
@@ -878,7 +912,7 @@
         return this.all(removeElement, arguments);
       }, // end bW.remove
 
-      not : function (slctr) {
+      not: function (slctr) {
         var comparison_set = selectElements(slctr);
 
         function reindex (inst) {
@@ -915,7 +949,7 @@
         return this;
       }, // end bW.not
 
-      setForm : function (submit_selector, suffix) {
+      setForm: function (submit_selector, suffix) {
         var form = this[0],
             submit,
             form_obj;
@@ -933,14 +967,14 @@
         return form_obj;
       }, // end bW.setForm
 
-      ajax : ajaxFunc,
+      ajax: ajaxFunc,
 
     } // end Bigwheel prototype
 
     function BigwheelForm (form_element, submit_button, class_suffix) {
       var instance = this,
           fclass,
-          fields = selectElements('input, textarea, select'),
+          fields = selectElements('input, textarea, select', form_element),
           prop,
           i;
 
@@ -1021,6 +1055,11 @@
 
         return instance;
       } // end bWF.setRequiredFields
+
+      f.setValidators = function (obj) {
+        for (field in obj) {
+        }
+      } // end setValidators
 
       f.val = function (name) {
         if (instance.fields[name]) { return instance.fields[name].value; }
@@ -1198,12 +1237,12 @@
       this.xhr = new XMLHttpRequest();
       this.setup = function (s) {
         var data_types = {
-          json : 'application/json',
-          xml : 'application/xml', 
-          html : 'text/html',
-          text : 'text/plain',
-          script : 'text/javascript'
-          // jsonp : create a new <script> tag
+          json: 'application/json',
+          xml: 'application/xml', 
+          html: 'text/html',
+          text: 'text/plain',
+          script: 'text/javascript'
+          // jsonp: create a new <script> tag
         },
         header_type;
 
@@ -1238,9 +1277,9 @@
 
     // defaults
     settings = {
-      method : 'GET',
-      data_type : 'json',
-      async : true
+      method: 'GET',
+      data_type: 'json',
+      async: true
     },
     query = '',
     bX;
