@@ -678,7 +678,7 @@
         return this.all(minusClass, args);
       }, // end bW.removeClass
 
-      setAttr: function (attr, value) {
+      attr: function (attr, value) {
         var args = parseArray(arguments);
 
         function setAtt () {
@@ -701,16 +701,31 @@
           }
         } // end setAttWithObject
 
-        // one attribute, one value
+        // return one attribute
+        if (args.length === 1 && typeof attr === 'string') {
+          return this[0].getAttribute(attr);
+        }
+
+        // set one attribute, one value
         if (typeof attr === 'string') {
-          return this.all(setAtt, args);
+          if (args.length === 2) {
+            return this.all(setAtt, args);
+          }
+          else {
+            throw new Error('To set an attribute, bW.attr accepts either a pair of strings -- the attribute name and the value to set it to -- or a single object containing attribute/value pairs.');
+          }
         }
 
         // an object containing one or more attribute/value pairs
         else if (typeof attr === 'object') {
-          return this.all(setAttWithObject, args);
+          if (args.length === 1) {
+            return this.all(setAttWithObject, args);
+          }
+          else {
+            throw new Error('When called with an object, bW.attr only takes one argument. You called it with ' + args.length + ' arguments.');
+          }
         }
-      }, // end bW.setAttr
+      }, // end bW.attr
 
       listenFor: function (evt, func, capt, aargs) {
 

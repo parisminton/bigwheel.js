@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*12/27/17*
+
+- Change `bW.setAttr()` to `bW.attr`, making it a getter *and* a setter. Better enforcement of the method signature and helpful error reporting (I hope.)
+
+
 *12/26/17*
 
 - Add a `bW.setAttr()` method for updating attributes.
