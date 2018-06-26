@@ -998,6 +998,8 @@
       instance.length = 1;
       instance.fields = {};
       instance.required_fields = [];
+      instance.form_action = form_element.id;
+      instance.form_method = form_element.getAttribute('method').toUpperCase();
       instance.formData = {};
 
       // ### bWF HELPERS  ###
@@ -1205,9 +1207,9 @@
 
       f.sendData = function () {
         ajaxOpts = {
-          method: 'POST',
+          method: instance.form_method,
           data_type: 'json',
-          url: '/log',
+          url: '/' + instance.form_action,
           data: instance.formData,
           success: function (data) {
             f.showThanks();

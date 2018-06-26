@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*6/25/18*
+
+- In `bW.ajax()`, derive a form's action and HTTP method from the form itself.
+
+
 *12/27/17*
 
 - Change `bW.setAttr()` to `bW.attr`, making it a getter *and* a setter. Better enforcement of the method signature and helpful error reporting (I hope.)
