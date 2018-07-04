@@ -11,7 +11,7 @@
 
   var bW = (typeof window.bW === 'function') ? window.bW : function (selector) {
 
-    bW.forms = bW.forms || [];
+    bW.forms = bW.forms || {};
 
     bW.uniq = function (list) {
       var i,
@@ -965,8 +965,7 @@
       }, // end bW.not
 
       setForm: function (submit_selector, suffix) {
-        var form = this[0],
-            submit,
+        var submit,
             form_obj;
 
         if (!submit_selector) {
@@ -976,9 +975,10 @@
           submit = selectElements(submit_selector)[0];
         }
 
-        form_obj = new BigwheelForm(form, submit, suffix);
+        form_obj = new BigwheelForm(this, submit, suffix);
         form_obj.init();
 
+        bW.forms[selector] = form_obj;
         return form_obj;
       }, // end bW.setForm
 
@@ -986,103 +986,23 @@
 
     } // end Bigwheel prototype
 
-    function BigwheelForm (form_element, submit_button, class_suffix) {
+    function BigwheelForm (bW_form, submit_button, class_suffix) {
       var instance = this,
           fclass,
-          fields = selectElements('input, textarea, select', form_element),
+          fields = selectElements('input, textarea, select', bW_form),
           prop,
           i;
 
-      instance[0] = instance.form = form_element;
+      instance[0] = instance.form = bW_form[0];
       instance.submit = submit_button;
       instance.length = 1;
       instance.fields = {};
       instance.required_fields = [];
-      instance.form_action = form_element.id;
-      instance.form_method = form_element.getAttribute('method').toUpperCase();
+      instance.form_action = bW_form[0].id;
+      instance.form_method = bW_form[0].getAttribute('method').toUpperCase();
       instance.formData = {};
 
-      // ### bWF HELPERS  ###
-      function bruiseField (field) {
-        if (/TEXTAREA|SELECT/.test(field.nodeName)
-          || /text|fieldset/.test(field.type)) {
-          plusClass(field, 'bW-invalid-field');
-        }
-      } // end bruiseField
-
-      function areFieldsEmpty () {
-        var i,
-            empty = false,
-            req = instance.required_fields;
-
-        for (i = 0; i < req.length; i += 1) {
-          if (req[i].value === '') {
-            bruiseField(req[i]);
-            empty = true;
-          }
-        }
-        if (empty) {
-          // prepare error message
-        }
-        return empty;
-      } // end areFieldsEmpty
-
-      if (class_suffix) {
-        fclass = 'bW-form-' + class_suffix;
-        if (!/fclass/.test(instance[0].className)) {
-          plusClass(instance[0], fclass);
-        }
-        fclass = 'bW-submit-' + class_suffix;
-        if (!/fclass/.test(instance.submit.className)) {
-          plusClass(instance.submit, fclass);
-        }
-      }
-      
-      for (i = 0; i < fields.length; i += 1) {
-        // exclude the submit button
-        if (fields[i] === instance.submit) {
-          continue;
-        }
-        else {
-          if (!fields[i].name) {
-            console.error(fields[i]);
-            throw new Error('^^^ A "name" property is required for each input element within the "bW-form-' + class_suffix + '" form.');
-          }
-          else {
-            instance.fields[fields[i].name] = fields[i];
-          }
-        }
-      }
-      
-      // ### BigwheelForm prototype needs all the Bigwheel.prototype methods ###
-      for (var prop in Bigwheel.prototype) {
-        BigwheelForm.prototype[prop] = Bigwheel.prototype[prop];
-      }
-
-      f = BigwheelForm.prototype;
-
-      f.setRequiredFields = function (slctr) {
-        var i,
-            rf = selectElements(slctr);
-
-        for (i = 0; i < rf.length; i += 1) {
-          instance.required_fields.push(rf[i]);
-          plusClass(rf[i], 'bW-required-field');
-        }
-
-        return instance;
-      } // end bWF.setRequiredFields
-
-      f.setValidators = function (obj) {
-        for (field in obj) {
-        }
-      } // end setValidators
-
-      f.val = function (name) {
-        if (instance.fields[name]) { return instance.fields[name].value; }
-      } // end bWF.val
-
-      f.collectValues = function () {
+      instance.collectValues = function () {
         var fd_buffer = {};
 
         // remove empties from Array.split
@@ -1164,7 +1084,123 @@
         }
 
         bW.copyProperties(fd_buffer, instance.formData);
-      } // end bWF.collectValues
+      } // end instance.collectValues
+
+      instance.submitHandler = function (evt) {
+        evt.preventDefault();
+        instance.collectValues();
+        console.log('Collected', instance.formData);
+        instance.sendData();
+        /*
+        if (f.readyToSubmitForm()) {
+          f.sendData();
+        }
+        else {
+          f.showErrorToast();
+        }
+        */
+      } // end instance.submitHandler
+
+      instance.sendData = function () {
+        ajaxOpts = {
+          method: instance.form_method,
+          data_type: 'json',
+          url: '/' + instance.form_action,
+          data: instance.formData,
+          success: function (data) {
+            f.showThanks();
+          },
+          error: function (e, status, error_thrown) {
+            console.log('Form at ' + document.location.href + ' failed to submit with the error: "' + e.status + ' ' + error_thrown + '".');
+            f.addErrorMessage('There was a problem processing your submission. Please try again.');
+            form.find('.field').first().addClass('bW-invalid-field');
+            f.showErrorToast();
+            form.find('.field').first().removeClass('bW-invalid-field');
+          }
+        }
+
+        bW.ajax(ajaxOpts);
+      } // end instance.sendData
+
+      // ### bWF HELPERS  ###
+      function bruiseField (field) {
+        if (/TEXTAREA|SELECT/.test(field.nodeName)
+          || /text|fieldset/.test(field.type)) {
+          plusClass(field, 'bW-invalid-field');
+        }
+      } // end bruiseField
+
+      function areFieldsEmpty () {
+        var i,
+            empty = false,
+            req = instance.required_fields;
+
+        for (i = 0; i < req.length; i += 1) {
+          if (req[i].value === '') {
+            bruiseField(req[i]);
+            empty = true;
+          }
+        }
+        if (empty) {
+          // prepare error message
+        }
+        return empty;
+      } // end areFieldsEmpty
+
+      if (class_suffix) {
+        fclass = 'bW-form-' + class_suffix;
+        if (!/fclass/.test(instance[0].className)) {
+          plusClass(instance[0], fclass);
+        }
+        fclass = 'bW-submit-' + class_suffix;
+        if (!/fclass/.test(instance.submit.className)) {
+          plusClass(instance.submit, fclass);
+        }
+      }
+      
+      for (i = 0; i < fields.length; i += 1) {
+        // exclude the submit button
+        if (fields[i] === instance.submit) {
+          continue;
+        }
+        else {
+          if (!fields[i].name) {
+            console.error(fields[i]);
+            throw new Error('^^^ A "name" property is required for each input element within the "bW-form-' + class_suffix + '" form.');
+          }
+          else {
+            instance.fields[fields[i].name] = fields[i];
+          }
+        }
+      }
+      
+      // ### BigwheelForm prototype needs all the Bigwheel.prototype methods ###
+      for (var prop in Bigwheel.prototype) {
+        BigwheelForm.prototype[prop] = Bigwheel.prototype[prop];
+      }
+
+      f = BigwheelForm.prototype;
+
+      f.setRequiredFields = function (slctr) {
+        var i,
+            rf = selectElements(slctr);
+
+        for (i = 0; i < rf.length; i += 1) {
+          instance.required_fields.push(rf[i]);
+          plusClass(rf[i], 'bW-required-field');
+        }
+
+        return instance;
+      } // end bWF.setRequiredFields
+
+      f.setValidators = function (obj) {
+        for (field in obj) {
+        }
+      } // end setValidators
+
+      f.val = function (name) {
+        if (instance.fields[name]) { return instance.fields[name].value; }
+      } // end bWF.val
 
 
       f.addToTests = function (test) {
@@ -1205,41 +1241,6 @@
         return ready_to_submit;
       } // end readyToSubmitForm
 
-      f.sendData = function () {
-        ajaxOpts = {
-          method: instance.form_method,
-          data_type: 'json',
-          url: '/' + instance.form_action,
-          data: instance.formData,
-          success: function (data) {
-            f.showThanks();
-          },
-          error: function (e, status, error_thrown) {
-            console.log('Form at ' + document.location.href + ' failed to submit with the error: "' + e.status + ' ' + error_thrown + '".');
-            f.addErrorMessage('There was a problem processing your submission. Please try again.');
-            form.find('.field').first().addClass('bW-invalid-field');
-            f.showErrorToast();
-            form.find('.field').first().removeClass('bW-invalid-field');
-          }
-        }
-
-        bW.ajax(ajaxOpts);
-      } // end bWF.sendData
-
-      f.submitHandler = function (evt) {
-        evt.preventDefault();
-        f.collectValues();
-        console.log(instance.formData);
-        f.sendData();
-        /*
-        if (f.readyToSubmitForm()) {
-          f.sendData();
-        }
-        else {
-          f.showErrorToast();
-        }
-        */
-      }
       // ### end BigwheelForm prototype ###
 
       bW(instance.submit).listenFor('click', instance.submitHandler, true);

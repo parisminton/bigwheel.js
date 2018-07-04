@@ -4,6 +4,11 @@ bigwheel.js
 Changelog
 ---------
 
+*7/4/18*
+
+- Fix collecting and submitting behavior for multiple forms on the same page.
+
+
 *6/25/18*
 
 - In `bW.ajax()`, derive a form's action and HTTP method from the form itself.
